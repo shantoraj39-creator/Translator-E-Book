@@ -1,0 +1,5 @@
+{
+  "name": "Bangla PDF Translator",
+  "description": "Read, translate, and capture images to translate English PDFs to Bengali instantly.",
+  "requestFramePermissions": ["camera"]
+}
