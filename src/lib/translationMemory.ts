@@ -333,6 +333,32 @@ const placeWords = new Set([
   "here", "there", "everywhere", "nowhere", "somewhere", "anywhere", "home", "away", "out", "inside", "outside", "upstairs", "downstairs"
 ]);
 
+const humanNouns = new Set([
+  "man", "woman", "boy", "girl", "child", "person", "student", "teacher", "doctor", "engineer", "worker", "friend", "brother", "sister", "father", "mother", "king", "queen", "leader", "people", "human", "someone", "anyone", "nobody"
+]);
+
+const commonPhrases: Record<string, string> = {
+  "how are you": "আপনি কেমন আছেন?",
+  "what is your name": "আপনার নাম কি?",
+  "i love you": "আমি তোমাকে ভালোবাসি",
+  "thank you": "ধন্যবাদ",
+  "good morning": "শুভ সকাল",
+  "good night": "শুভ রাত্রি",
+  "excuse me": "মাফ করবেন",
+  "i am sorry": "আমি দুঃখিত",
+  "no problem": "কোনো সমস্যা নেই",
+  "take care": "নিজের যত্ন নিন",
+  "see you later": "পরে দেখা হবে",
+  "nice to meet you": "আপনার সাথে দেখা করে ভালো লাগলো",
+  "how much": "কত?",
+  "where is": "কোথায়",
+  "i don't know": "আমি জানি না",
+  "i dont know": "আমি জানি না",
+  "help me": "আমাকে সাহায্য করুন",
+  "what happened": "কি হয়েছে?",
+  "wait a minute": "এক মিনিট অপেক্ষা করুন"
+};
+
 const reorderSentence = (sentence: string): string[] => {
   const clauses = sentence.split(/([,;:\.\!\?]+)/);
   let finalReordered: string[] = [];
@@ -352,14 +378,31 @@ const reorderSentence = (sentence: string): string[] => {
     let timePhrase: string[] = [];
     let placePhrase: string[] = [];
     let currentPart = 'subject';
+    
+    // Identify auxiliary verbs to handle them specially
+    const auxVerbs = ["am", "is", "are", "was", "were", "have", "has", "had", "do", "does", "did", "can", "could", "will", "would", "shall", "should", "may", "might", "must"];
+    
     for (let i = 0; i < words.length; i++) {
         const word = words[i];
         const cleanWord = word.replace(/[^a-zA-Z]/g, '').toLowerCase();
+        
         if (commonVerbs.has(cleanWord)) {
+            // If it's an auxiliary verb followed by another verb, it's part of the verb phrase
+            // In Bengali, we often omit the copula (am/is/are) in present tense
+            if (["is", "am", "are"].includes(cleanWord) && i + 1 < words.length) {
+                const nextClean = words[i+1].replace(/[^a-zA-Z]/g, '').toLowerCase();
+                if (nextClean.endsWith('ing') || commonVerbs.has(nextClean)) {
+                    // It's an auxiliary, keep it in verb phrase but it might be omitted later
+                    currentPart = 'verb';
+                    verbPhrase.push(word);
+                    continue;
+                }
+            }
+            
             currentPart = 'verb';
             verbPhrase.push(word);
         } else if (currentPart === 'verb') {
-            const isAdverb = ["not", "always", "never", "just", "already", "really", "very", "often", "still"].includes(cleanWord);
+            const isAdverb = ["not", "always", "never", "just", "already", "really", "very", "often", "still", "quickly", "slowly"].includes(cleanWord);
             if (isAdverb) verbPhrase.push(word);
             else {
                 currentPart = 'object';
@@ -367,14 +410,20 @@ const reorderSentence = (sentence: string): string[] => {
                 else if (placeWords.has(cleanWord)) placePhrase.push(word);
                 else object.push(word);
             }
-        } else if (currentPart === 'subject') subject.push(word);
-        else {
+        } else if (currentPart === 'subject') {
+            // Adjectives usually stay with the noun
+            subject.push(word);
+        } else {
             if (timeWords.has(cleanWord)) timePhrase.push(word);
             else if (placeWords.has(cleanWord)) placePhrase.push(word);
             else object.push(word);
         }
     }
+    
+    // SOV Order: Subject + Time + Place + Object + Verb
     let reordered: string[] = [...subject, ...timePhrase, ...placePhrase, ...object, ...verbPhrase];
+    
+    // Move prepositions after their noun phrases (Bengali uses postpositions)
     for (let i = 0; i < reordered.length - 1; i++) {
       const cleanWord = reordered[i].replace(/[^a-zA-Z]/g, '').toLowerCase();
       if (prepositions.has(cleanWord)) {
@@ -422,13 +471,26 @@ const englishToBengaliDigits = (str: string): string => {
 
 export const translateTextOffline = async (text: string): Promise<string> => {
   const cachedMemory = await localforage.getItem<Record<string, string>>('translation_memory') || {};
+  
+  // Check for common phrases first
+  const lowerText = text.toLowerCase().trim().replace(/[.!?]$/, '');
+  if (commonPhrases[lowerText]) return commonPhrases[lowerText];
+
   const segments = text.split(/([.!?\n]+)/);
   let finalTranslatedText = '';
-  for (const segment of segments) {
+  
+  for (let sIdx = 0; sIdx < segments.length; sIdx++) {
+    const segment = segments[sIdx];
     if (!segment.trim() || segment.match(/^[.!?\n]+$/)) {
       finalTranslatedText += segment;
       continue;
     }
+
+    // Performance optimization for long texts: yield to UI thread
+    if (sIdx % 5 === 0 && segments.length > 10) {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+
     const reorderedWords = reorderSentence(segment);
     let translatedWords: string[] = [];
     for (let i = 0; i < reorderedWords.length; i++) {
@@ -443,6 +505,7 @@ export const translateTextOffline = async (text: string): Promise<string> => {
       const prefix = englishToBengaliDigits(word.substring(0, cleanWordMatch.index));
       const suffix = englishToBengaliDigits(word.substring(cleanWordMatch.index + cleanWordMatch[0].length));
       
+      // Special handling for "the"
       if (cleanWord === "the" && i + 1 < reorderedWords.length) {
           const nextWord = reorderedWords[i+1];
           const nextCleanMatch = nextWord.match(/[a-zA-Z\-']+/);
@@ -450,11 +513,16 @@ export const translateTextOffline = async (text: string): Promise<string> => {
               const nextClean = nextCleanMatch[0].toLowerCase();
               const nextTranslated = await getFromMemory(nextClean, cachedMemory);
               if (nextTranslated) {
-                  translatedWords.push(`${prefix}${nextWord.substring(0, nextCleanMatch.index)}${nextTranslated}টি${nextWord.substring(nextCleanMatch.index + nextCleanMatch[0].length)}${suffix}`);
+                  // Check if plural
+                  const isPlural = nextClean.endsWith('s') && nextClean.length > 3;
+                  const article = isPlural ? "গুলো" : "টি";
+                  translatedWords.push(`${prefix}${nextWord.substring(0, nextCleanMatch.index)}${nextTranslated}${article}${nextWord.substring(nextCleanMatch.index + nextCleanMatch[0].length)}${suffix}`);
                   i++; continue;
               }
           }
       }
+
+      // Special handling for "a/an"
       if ((cleanWord === "a" || cleanWord === "an") && i + 1 < reorderedWords.length) {
           const nextWord = reorderedWords[i+1];
           const nextCleanMatch = nextWord.match(/[a-zA-Z\-']+/);
@@ -462,11 +530,24 @@ export const translateTextOffline = async (text: string): Promise<string> => {
               const nextClean = nextCleanMatch[0].toLowerCase();
               const nextTranslated = await getFromMemory(nextClean, cachedMemory);
               if (nextTranslated) {
-                  translatedWords.push(`${prefix}একটি ${nextTranslated}${suffix}`);
+                  const isHuman = humanNouns.has(nextClean);
+                  const article = isHuman ? "একজন" : "একটি";
+                  translatedWords.push(`${prefix}${article} ${nextTranslated}${suffix}`);
                   i++; continue;
               }
           }
       }
+
+      // Omit copula (am/is/are) in simple present if it's not the only verb
+      if (["am", "is", "are"].includes(cleanWord) && reorderedWords.length > 3) {
+          const hasOtherVerb = reorderedWords.some((w, idx) => {
+              if (idx === i) return false;
+              const cw = w.replace(/[^a-zA-Z]/g, '').toLowerCase();
+              return commonVerbs.has(cw) && !["am", "is", "are"].includes(cw);
+          });
+          if (hasOtherVerb) continue;
+      }
+
       const translated = await getFromMemory(cleanWordMatch[0], cachedMemory);
       if (translated) translatedWords.push(`${prefix}${translated}${suffix}`);
       else {
