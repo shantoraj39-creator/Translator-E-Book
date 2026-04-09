@@ -15,11 +15,12 @@ body {
 .markdown-body {
   font-family: var(--font-serif);
   line-height: 1.8;
-  font-size: 1.125rem;
+  font-size: inherit;
 }
 
 .markdown-body p {
   margin-bottom: 1.5em;
+  font-size: inherit;
 }
 
 .markdown-body h1, .markdown-body h2, .markdown-body h3 {

@@ -111,7 +111,18 @@ export const basicDictionary: Record<string, string> = {
   "shouldn't": "উচিত নয়", "mustn't": "অবশ্যই না",
   "dont": "না", "doesnt": "না", "didnt": "না", "cant": "পারি না", "couldnt": "পারিনি", "wont": "করব না", "wouldnt": "করতাম না",
   "isnt": "নয়", "arent": "নয়", "wasnt": "ছিল না", "werent": "ছিল না", "havent": "নেই", "hasnt": "নেই", "hadnt": "ছিল না",
-  "shouldnt": "উচিত নয়", "mustnt": "অবশ্যই না"
+  "shouldnt": "উচিত নয়", "mustnt": "অবশ্যই না",
+  // Complex and Academic Words
+  "comprehensive": "ব্যাপক", "significant": "উল্লেখযোগ্য", "fundamental": "মৌলিক", "perspective": "দৃষ্টিভঙ্গি", "consequence": "পরিণতি",
+  "implementation": "বাস্তবায়ন", "framework": "কাঠামো", "hypothesis": "অনুমান", "empirical": "অভিজ্ঞতামূলক", "theoretical": "তাত্ত্বিক",
+  "analysis": "বিশ্লেষণ", "synthesis": "সংশ্লেষণ", "methodology": "পদ্ধতি", "paradigm": "দৃষ্টান্ত", "infrastructure": "অবকাঠামো",
+  "sustainability": "স্থায়িত্ব", "innovation": "উদ্ভাবন", "collaboration": "সহযোগিতা", "diversity": "বৈচিত্র্য", "integration": "একীকরণ",
+  "optimization": "অপ্টিমাইজেশন", "efficiency": "দক্ষতা", "effectiveness": "কার্যকারিতা", "strategic": "কৌশলগত", "operational": "কার্যকরী",
+  "complexity": "জটিলতা", "simplicity": "সরলতা", "ambiguity": "অস্পষ্টতা", "clarity": "স্পষ্টতা", "precision": "নির্ভুলতা",
+  "resilience": "স্থিতিস্থাপকতা", "vulnerability": "ঝুঁকি", "mitigation": "প্রশমন", "adaptation": "অভিযোজন", "transformation": "রূপান্তর",
+  "governance": "শাসন", "accountability": "জবাবদিহিতা", "transparency": "স্বচ্ছতা", "integrity": "অখণ্ডতা", "ethics": "নীতিশাস্ত্র",
+  "philosophy": "দর্শন", "psychology": "মনোবিজ্ঞান", "sociology": "সমাজবিজ্ঞান", "anthropology": "নৃবিজ্ঞান", "economics": "অর্থনীতি",
+  "phenomenon": "ঘটনা", "criterion": "মানদণ্ড", "mechanism": "কৌশল", "component": "উপাদান", "variable": "পরিবর্তনশীল"
 };
 
 const extendedDictionary = { ...(largeDictionary as Record<string, string>), ...(rareDictionary as Record<string, string>) };
@@ -119,7 +130,6 @@ const extendedDictionary = { ...(largeDictionary as Record<string, string>), ...
 export const saveToMemory = async (english: string, bengali: string) => {
   try {
     const memory = await localforage.getItem<Record<string, string>>('translation_memory') || {};
-    // Save lowercase for case-insensitive lookup
     memory[english.toLowerCase().trim()] = bengali.trim();
     await localforage.setItem('translation_memory', memory);
   } catch (e) {
@@ -146,19 +156,16 @@ export const deleteFromMemory = async (english: string) => {
   }
 };
 
-export const getFromMemory = async (english: string): Promise<string | null> => {
+export const getFromMemory = async (english: string, cachedMemory?: Record<string, string>): Promise<string | null> => {
   try {
-    const memory = await localforage.getItem<Record<string, string>>('translation_memory') || {};
+    const memory = cachedMemory || await localforage.getItem<Record<string, string>>('translation_memory') || {};
     const word = english.toLowerCase().trim();
     
-    // 1. Direct lookup
     if (memory[word]) return memory[word];
     if (basicDictionary[word]) return basicDictionary[word];
     if (extendedDictionary[word]) return extendedDictionary[word];
 
-    // 2. Morphological Fallbacks
-    
-    // Plurals (-s, -es)
+    // Morphological Fallbacks
     if (word.endsWith('s') && word.length > 3) {
       const singular = word.slice(0, -1);
       const translatedSingular = memory[singular] || basicDictionary[singular] || extendedDictionary[singular];
@@ -169,15 +176,8 @@ export const getFromMemory = async (english: string): Promise<string | null> => 
         const translatedSingularEs = memory[singularEs] || basicDictionary[singularEs] || extendedDictionary[singularEs];
         if (translatedSingularEs) return translatedSingularEs + "গুলো";
       }
-      
-      if (word.endsWith('ies')) {
-        const singularY = word.slice(0, -3) + 'y';
-        const translatedSingularY = memory[singularY] || basicDictionary[singularY] || extendedDictionary[singularY];
-        if (translatedSingularY) return translatedSingularY + "গুলো";
-      }
     }
 
-    // Continuous/Gerund (-ing)
     if (word.endsWith('ing') && word.length > 4) {
       const base = word.slice(0, -3);
       const baseE = base + 'e';
@@ -186,44 +186,18 @@ export const getFromMemory = async (english: string): Promise<string | null> => 
       if (translatedBase) return translatedBase + "ছে";
     }
 
-    // Past tense (-ed)
     if (word.endsWith('ed') && word.length > 3) {
       const base = word.slice(0, -2);
       const baseD = word.slice(0, -1);
       const translatedBase = memory[base] || basicDictionary[base] || extendedDictionary[base] ||
                              memory[baseD] || basicDictionary[baseD] || extendedDictionary[baseD];
       if (translatedBase) return translatedBase + "ছিল";
-      
-      if (word.endsWith('ied')) {
-        const baseY = word.slice(0, -3) + 'y';
-        const translatedBaseY = memory[baseY] || basicDictionary[baseY] || extendedDictionary[baseY];
-        if (translatedBaseY) return translatedBaseY + "ছিল";
-      }
     }
 
-    // Adverbs (-ly)
     if (word.endsWith('ly') && word.length > 3) {
       const base = word.slice(0, -2);
       const translatedBase = memory[base] || basicDictionary[base] || extendedDictionary[base];
       if (translatedBase) return "ভাবে " + translatedBase;
-    }
-
-    // Comparatives (-er)
-    if (word.endsWith('er') && word.length > 3) {
-      const base = word.slice(0, -2);
-      const baseE = word.slice(0, -1);
-      const translatedBase = memory[base] || basicDictionary[base] || extendedDictionary[base] ||
-                             memory[baseE] || basicDictionary[baseE] || extendedDictionary[baseE];
-      if (translatedBase) return "আরও " + translatedBase;
-    }
-
-    // Superlatives (-est)
-    if (word.endsWith('est') && word.length > 4) {
-      const base = word.slice(0, -3);
-      const baseE = word.slice(0, -2);
-      const translatedBase = memory[base] || basicDictionary[base] || extendedDictionary[base] ||
-                             memory[baseE] || basicDictionary[baseE] || extendedDictionary[baseE];
-      if (translatedBase) return "সবচেয়ে " + translatedBase;
     }
 
     return null;
@@ -234,37 +208,18 @@ export const getFromMemory = async (english: string): Promise<string | null> => 
   }
 };
 
-// Simple Levenshtein distance for spell checking
 const levenshteinDistance = (a: string, b: string): number => {
   if (a.length === 0) return b.length;
   if (b.length === 0) return a.length;
-
   const matrix = [];
-
-  for (let i = 0; i <= b.length; i++) {
-    matrix[i] = [i];
-  }
-
-  for (let j = 0; j <= a.length; j++) {
-    matrix[0][j] = j;
-  }
-
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
   for (let i = 1; i <= b.length; i++) {
     for (let j = 1; j <= a.length; j++) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1, // substitution
-          Math.min(
-            matrix[i][j - 1] + 1, // insertion
-            matrix[i - 1][j] + 1 // deletion
-          )
-        );
-      }
+      if (b.charAt(i - 1) === a.charAt(j - 1)) matrix[i][j] = matrix[i - 1][j - 1];
+      else matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
     }
   }
-
   return matrix[b.length][a.length];
 };
 
@@ -281,7 +236,6 @@ export const getSuggestionsFromMemory = async (prefix: string, limit: number = 5
       }
     };
 
-    // 1. Exact prefix matches
     for (const eng in memory) {
       if (eng.startsWith(wordPrefix)) addSuggestion(eng, memory[eng]);
       if (suggestions.length >= limit) return suggestions;
@@ -295,7 +249,6 @@ export const getSuggestionsFromMemory = async (prefix: string, limit: number = 5
       if (suggestions.length >= limit) return suggestions;
     }
 
-    // 2. Spell Check / Auto-correct (if we still need suggestions and word is long enough)
     if (suggestions.length < limit && wordPrefix.length >= 3) {
       const firstChar = wordPrefix[0];
       const queryLen = wordPrefix.length;
@@ -303,7 +256,6 @@ export const getSuggestionsFromMemory = async (prefix: string, limit: number = 5
 
       const checkCorrections = (dict: Record<string, string>) => {
         for (const eng in dict) {
-          // Only check words starting with same letter and similar length for performance
           if (eng[0] === firstChar && Math.abs(eng.length - queryLen) <= 2) {
             const dist = levenshteinDistance(wordPrefix, eng);
             if (dist > 0 && dist <= maxDist) {
@@ -319,7 +271,6 @@ export const getSuggestionsFromMemory = async (prefix: string, limit: number = 5
       if (checkCorrections(basicDictionary)) return suggestions;
       checkCorrections(extendedDictionary);
     }
-
     return suggestions;
   } catch (e) {
     console.error("Failed to get suggestions", e);
@@ -330,72 +281,40 @@ export const getSuggestionsFromMemory = async (prefix: string, limit: number = 5
 const commonVerbs = new Set([
   "is", "am", "are", "was", "were", "be", "been", "being",
   "have", "has", "had", "do", "does", "did", "done",
-  "eat", "eats", "ate", "eating",
-  "go", "goes", "went", "gone", "going",
-  "read", "reads", "reading",
-  "write", "writes", "wrote", "written", "writing",
-  "play", "plays", "played", "playing",
-  "see", "sees", "saw", "seen", "seeing",
-  "make", "makes", "made", "making",
-  "take", "takes", "took", "taken", "taking",
-  "come", "comes", "came", "coming",
-  "know", "knows", "knew", "known", "knowing",
-  "think", "thinks", "thought", "thinking",
-  "look", "looks", "looked", "looking",
-  "want", "wants", "wanted", "wanting",
-  "give", "gives", "gave", "given", "giving",
-  "use", "uses", "used", "using",
-  "find", "finds", "found", "finding",
-  "tell", "tells", "told", "telling",
-  "ask", "asks", "asked", "asking",
-  "work", "works", "worked", "working",
-  "seem", "seems", "seemed", "seeming",
-  "feel", "feels", "felt", "feeling",
-  "try", "tries", "tried", "trying",
-  "leave", "leaves", "left", "leaving",
-  "call", "calls", "called", "calling",
-  "love", "loves", "loved", "loving",
-  "like", "likes", "liked", "liking",
+  "eat", "eats", "ate", "eating", "go", "goes", "went", "gone", "going",
+  "read", "reads", "reading", "write", "writes", "wrote", "written", "writing",
+  "play", "plays", "played", "playing", "see", "sees", "saw", "seen", "seeing",
+  "make", "makes", "made", "making", "take", "takes", "took", "taken", "taking",
+  "come", "comes", "came", "coming", "know", "knows", "knew", "known", "knowing",
+  "think", "thinks", "thought", "thinking", "look", "looks", "looked", "looking",
+  "want", "wants", "wanted", "wanting", "give", "gives", "gave", "given", "giving",
+  "use", "uses", "used", "using", "find", "finds", "found", "finding",
+  "tell", "tells", "told", "telling", "ask", "asks", "asked", "asking",
+  "work", "works", "worked", "working", "seem", "seems", "seemed", "seeming",
+  "feel", "feels", "felt", "feeling", "try", "tries", "tried", "trying",
+  "leave", "leaves", "left", "leaving", "call", "calls", "called", "calling",
+  "love", "loves", "loved", "loving", "like", "likes", "liked", "liking",
   "understand", "understands", "understood", "understanding",
   "speak", "speaks", "spoke", "spoken", "speaking",
-  "learn", "learns", "learned", "learning",
-  "teach", "teaches", "taught", "teaching",
-  "buy", "buys", "bought", "buying",
-  "sell", "sells", "sold", "selling",
-  "bring", "brings", "brought", "bringing",
-  "build", "builds", "built", "building",
-  "break", "breaks", "broke", "broken", "breaking",
-  "catch", "catches", "caught", "catching",
-  "choose", "chooses", "chose", "chosen", "choosing",
-  "draw", "draws", "drew", "drawn", "drawing",
-  "drink", "drinks", "drank", "drunk", "drinking",
-  "drive", "drives", "drove", "driven", "driving",
-  "fall", "falls", "fell", "fallen", "falling",
-  "fly", "flies", "flew", "flown", "flying",
-  "forget", "forgets", "forgot", "forgotten", "forgetting",
-  "get", "gets", "got", "gotten", "getting",
-  "grow", "grows", "grew", "grown", "growing",
-  "hear", "hears", "heard", "hearing",
-  "hide", "hides", "hid", "hidden", "hiding",
-  "hit", "hits", "hitting",
-  "hold", "holds", "held", "holding",
-  "keep", "keeps", "kept", "keeping",
-  "lose", "loses", "lost", "losing",
-  "mean", "means", "meant", "meaning",
-  "meet", "meets", "met", "meeting",
-  "pay", "pays", "paid", "paying",
-  "put", "puts", "putting",
-  "run", "runs", "ran", "running",
-  "send", "sends", "sent", "sending",
-  "sit", "sits", "sat", "sitting",
-  "sleep", "sleeps", "slept", "sleeping",
-  "spend", "spends", "spent", "spending",
-  "stand", "stands", "stood", "standing",
-  "swim", "swims", "swam", "swum", "swimming",
-  "throw", "throws", "threw", "thrown", "throwing",
-  "wake", "wakes", "woke", "woken", "waking",
-  "wear", "wears", "wore", "worn", "wearing",
-  "win", "wins", "won", "winning",
+  "learn", "learns", "learned", "learning", "teach", "teaches", "taught", "teaching",
+  "buy", "buys", "bought", "buying", "sell", "sells", "sold", "selling",
+  "bring", "brings", "brought", "bringing", "build", "builds", "built", "building",
+  "break", "breaks", "broke", "broken", "breaking", "catch", "catches", "caught", "catching",
+  "choose", "chooses", "chose", "chosen", "choosing", "draw", "draws", "drew", "drawn", "drawing",
+  "drink", "drinks", "drank", "drunk", "drinking", "drive", "drives", "drove", "driven", "driving",
+  "fall", "falls", "fell", "fallen", "falling", "fly", "flies", "flew", "flown", "flying",
+  "forget", "forgets", "forgot", "forgotten", "forgetting", "get", "gets", "got", "gotten", "getting",
+  "grow", "grows", "grew", "grown", "growing", "hear", "hears", "heard", "hearing",
+  "hide", "hides", "hid", "hidden", "hiding", "hit", "hits", "hitting",
+  "hold", "holds", "held", "holding", "keep", "keeps", "kept", "keeping",
+  "lose", "loses", "lost", "losing", "mean", "means", "meant", "meaning",
+  "meet", "meets", "met", "meeting", "pay", "pays", "paid", "paying",
+  "put", "puts", "putting", "run", "runs", "ran", "running",
+  "send", "sends", "sent", "sending", "sit", "sits", "sat", "sitting",
+  "sleep", "sleeps", "slept", "sleeping", "spend", "spends", "spent", "spending",
+  "stand", "stands", "stood", "standing", "swim", "swims", "swam", "swum", "swimming",
+  "throw", "throws", "threw", "thrown", "throwing", "wake", "wakes", "woke", "woken", "waking",
+  "wear", "wears", "wore", "worn", "wearing", "win", "wins", "won", "winning",
   "can", "could", "will", "would", "shall", "should", "may", "might", "must",
   "dont", "doesnt", "didnt", "cant", "couldnt", "wont", "wouldnt",
   "isnt", "arent", "wasnt", "werent", "havent", "hasnt", "hadnt",
@@ -415,84 +334,56 @@ const placeWords = new Set([
 ]);
 
 const reorderSentence = (sentence: string): string[] => {
-  // Split by clauses based on punctuation
   const clauses = sentence.split(/([,;:\.\!\?]+)/);
   let finalReordered: string[] = [];
-
   for (let c of clauses) {
     if (c.match(/[,;:\.\!\?]+/)) {
       finalReordered.push(c.trim());
       continue;
     }
-
     const words = c.trim().split(/\s+/).filter(w => w.length > 0);
     if (words.length <= 2) {
       finalReordered.push(...words);
       continue;
     }
-
     let subject: string[] = [];
     let verbPhrase: string[] = [];
     let object: string[] = [];
     let timePhrase: string[] = [];
     let placePhrase: string[] = [];
-
     let currentPart = 'subject';
-    
     for (let i = 0; i < words.length; i++) {
         const word = words[i];
         const cleanWord = word.replace(/[^a-zA-Z]/g, '').toLowerCase();
-        
         if (commonVerbs.has(cleanWord)) {
             currentPart = 'verb';
             verbPhrase.push(word);
         } else if (currentPart === 'verb') {
-            // Allow adverbs to interrupt verb phrases
             const isAdverb = ["not", "always", "never", "just", "already", "really", "very", "often", "still"].includes(cleanWord);
-            if (isAdverb) {
-                verbPhrase.push(word);
-            } else {
+            if (isAdverb) verbPhrase.push(word);
+            else {
                 currentPart = 'object';
                 if (timeWords.has(cleanWord)) timePhrase.push(word);
                 else if (placeWords.has(cleanWord)) placePhrase.push(word);
                 else object.push(word);
             }
-        } else if (currentPart === 'subject') {
-            subject.push(word);
-        } else {
-            // We are in object or later
-            if (timeWords.has(cleanWord)) {
-                timePhrase.push(word);
-            } else if (placeWords.has(cleanWord)) {
-                placePhrase.push(word);
-            } else {
-                object.push(word);
-            }
+        } else if (currentPart === 'subject') subject.push(word);
+        else {
+            if (timeWords.has(cleanWord)) timePhrase.push(word);
+            else if (placeWords.has(cleanWord)) placePhrase.push(word);
+            else object.push(word);
         }
     }
-
-    // Bengali SOV Order: Subject + Time + Place + Object + Verb
-    let reordered: string[] = [
-        ...subject,
-        ...timePhrase,
-        ...placePhrase,
-        ...object,
-        ...verbPhrase
-    ];
-
-    // Preposition handling: "in the room" -> "the room in"
+    let reordered: string[] = [...subject, ...timePhrase, ...placePhrase, ...object, ...verbPhrase];
     for (let i = 0; i < reordered.length - 1; i++) {
       const cleanWord = reordered[i].replace(/[^a-zA-Z]/g, '').toLowerCase();
       if (prepositions.has(cleanWord)) {
         let npEnd = i + 1;
         while (npEnd < reordered.length) {
             const nextClean = reordered[npEnd].replace(/[^a-zA-Z]/g, '').toLowerCase();
-            if (prepositions.has(nextClean) || commonVerbs.has(nextClean)) {
-                break;
-            }
+            if (prepositions.has(nextClean) || commonVerbs.has(nextClean)) break;
             npEnd++;
         }
-        
         if (npEnd > i + 1) {
             const prep = reordered[i];
             reordered.splice(i, 1);
@@ -501,10 +392,8 @@ const reorderSentence = (sentence: string): string[] => {
         }
       }
     }
-    
     finalReordered.push(...reordered);
   }
-
   return finalReordered;
 };
 
@@ -515,23 +404,14 @@ const transliterateToBengali = (word: string): string => {
     [/ee/g, 'ী'], [/oo/g, 'ু'], [/ou/g, 'াউ'], [/oi/g, 'য়ি'], [/au/g, 'অউ'],
     [/a/g, 'া'], [/b/g, 'ব'], [/c/g, 'ক'], [/d/g, 'ড'], [/e/g, 'ে'], [/f/g, 'ফ'], [/g/g, 'গ'], [/h/g, 'হ'], [/i/g, 'ি'], [/j/g, 'জ'], [/k/g, 'ক'], [/l/g, 'ল'], [/m/g, 'ম'], [/n/g, 'ন'], [/o/g, 'ো'], [/p/g, 'প'], [/q/g, 'ক'], [/r/g, 'র'], [/s/g, 'স'], [/t/g, 'ট'], [/u/g, 'ু'], [/v/g, 'ভ'], [/w/g, 'ওয়'], [/x/g, 'ক্স'], [/y/g, 'য়'], [/z/g, 'জ'],
   ];
-
   let result = word.toLowerCase();
-  
   const firstCharMap: Record<string, string> = { 'a': 'অ', 'e': 'এ', 'i': 'ই', 'o': 'ও', 'u': 'উ' };
   let isFirstVowel = !!firstCharMap[result[0]];
-
-  for (const [regex, replacement] of rules) {
-    result = result.replace(regex, replacement);
-  }
-  
+  for (const [regex, replacement] of rules) result = result.replace(regex, replacement);
   if (isFirstVowel) {
     const dependentToIndependent: Record<string, string> = { 'া': 'আ', 'ে': 'এ', 'ি': 'ই', 'ো': 'ও', 'ু': 'উ' };
-    if (dependentToIndependent[result[0]]) {
-      result = dependentToIndependent[result[0]] + result.slice(1);
-    }
+    if (dependentToIndependent[result[0]]) result = dependentToIndependent[result[0]] + result.slice(1);
   }
-
   return result;
 };
 
@@ -541,157 +421,61 @@ const englishToBengaliDigits = (str: string): string => {
 };
 
 export const translateTextOffline = async (text: string): Promise<string> => {
-  // Split text into sentences/lines to apply grammar rules per segment
+  const cachedMemory = await localforage.getItem<Record<string, string>>('translation_memory') || {};
   const segments = text.split(/([.!?\n]+)/);
   let finalTranslatedText = '';
-
   for (const segment of segments) {
     if (!segment.trim() || segment.match(/^[.!?\n]+$/)) {
       finalTranslatedText += segment;
       continue;
     }
-
     const reorderedWords = reorderSentence(segment);
     let translatedWords: string[] = [];
-    
     for (let i = 0; i < reorderedWords.length; i++) {
       const word = reorderedWords[i];
       if (!word.trim()) continue;
-      
       const cleanWordMatch = word.match(/[a-zA-Z\-']+/);
       if (!cleanWordMatch) {
           translatedWords.push(englishToBengaliDigits(word));
           continue;
       }
-      
       const cleanWord = cleanWordMatch[0].toLowerCase();
       const prefix = englishToBengaliDigits(word.substring(0, cleanWordMatch.index));
       const suffix = englishToBengaliDigits(word.substring(cleanWordMatch.index + cleanWordMatch[0].length));
       
-      // Grammar Rule: "the" + noun -> noun + "টি"
       if (cleanWord === "the" && i + 1 < reorderedWords.length) {
           const nextWord = reorderedWords[i+1];
           const nextCleanMatch = nextWord.match(/[a-zA-Z\-']+/);
           if (nextCleanMatch) {
               const nextClean = nextCleanMatch[0].toLowerCase();
-              const nextTranslated = await getFromMemory(nextClean);
+              const nextTranslated = await getFromMemory(nextClean, cachedMemory);
               if (nextTranslated) {
-                  const nextPrefix = nextWord.substring(0, nextCleanMatch.index);
-                  const nextSuffix = nextWord.substring(nextCleanMatch.index + nextCleanMatch[0].length);
-                  translatedWords.push(`${prefix}${nextPrefix}${nextTranslated}টি${nextSuffix}${suffix}`);
-                  i++; // Skip the noun
-                  continue;
+                  translatedWords.push(`${prefix}${nextWord.substring(0, nextCleanMatch.index)}${nextTranslated}টি${nextWord.substring(nextCleanMatch.index + nextCleanMatch[0].length)}${suffix}`);
+                  i++; continue;
               }
           }
       }
-
-      // Grammar Rule: "a" / "an" + noun -> "একটি" + noun
       if ((cleanWord === "a" || cleanWord === "an") && i + 1 < reorderedWords.length) {
           const nextWord = reorderedWords[i+1];
           const nextCleanMatch = nextWord.match(/[a-zA-Z\-']+/);
           if (nextCleanMatch) {
               const nextClean = nextCleanMatch[0].toLowerCase();
-              const nextTranslated = await getFromMemory(nextClean);
+              const nextTranslated = await getFromMemory(nextClean, cachedMemory);
               if (nextTranslated) {
                   translatedWords.push(`${prefix}একটি ${nextTranslated}${suffix}`);
-                  i++; // Skip the noun
-                  continue;
+                  i++; continue;
               }
           }
       }
-      
-      // Grammar Rule: Possessive pronouns
-      const possessives: Record<string, string> = { "my": "আমার", "your": "তোমার", "his": "তার", "her": "তার", "our": "আমাদের", "their": "তাদের" };
-      if (possessives[cleanWord] && i + 1 < reorderedWords.length) {
-          const nextWord = reorderedWords[i+1];
-          const nextCleanMatch = nextWord.match(/[a-zA-Z\-']+/);
-          if (nextCleanMatch) {
-              const nextClean = nextCleanMatch[0].toLowerCase();
-              const nextTranslated = await getFromMemory(nextClean);
-              if (nextTranslated) {
-                  translatedWords.push(`${prefix}${possessives[cleanWord]} ${nextTranslated}${suffix}`);
-                  i++; // Skip the noun
-                  continue;
-              }
-          }
-      }
-      
-      // Grammar Rule: Infinitive verbs ("to" + verb)
-      if (cleanWord === "to" && i + 1 < reorderedWords.length) {
-          const nextWord = reorderedWords[i+1];
-          const nextCleanMatch = nextWord.match(/[a-zA-Z\-']+/);
-          if (nextCleanMatch) {
-              const nextClean = nextCleanMatch[0].toLowerCase();
-              if (commonVerbs.has(nextClean)) {
-                  const nextTranslated = await getFromMemory(nextClean);
-                  if (nextTranslated) {
-                      let infinitive = nextTranslated;
-                      if (nextTranslated === "খাওয়া") infinitive = "খেতে";
-                      else if (nextTranslated === "যাওয়া") infinitive = "যেতে";
-                      else if (nextTranslated === "আসা") infinitive = "আসতে";
-                      else if (nextTranslated === "দেওয়া") infinitive = "দিতে";
-                      else if (nextTranslated === "নেওয়া") infinitive = "নিতে";
-                      else if (nextTranslated.endsWith("া")) infinitive = nextTranslated.slice(0, -1) + "তে";
-                      
-                      translatedWords.push(`${prefix}${infinitive}${suffix}`);
-                      i++; // Skip the verb
-                      continue;
-                  }
-              }
-          }
-      }
-
-      // Grammar Rule: Auxiliary verbs + ing (e.g., "am reading" -> "পড়ছি")
-      if (["am", "is", "are", "was", "were"].includes(cleanWord) && i + 1 < reorderedWords.length) {
-          const nextWord = reorderedWords[i+1];
-          const nextCleanMatch = nextWord.match(/[a-zA-Z\-']+/);
-          if (nextCleanMatch && nextCleanMatch[0].toLowerCase().endsWith("ing")) {
-              const nextClean = nextCleanMatch[0].toLowerCase();
-              const nextTranslated = await getFromMemory(nextClean);
-              if (nextTranslated) {
-                  translatedWords.push(`${prefix}${nextTranslated}${suffix}`);
-                  i++; // Skip the -ing verb
-                  continue;
-              }
-          }
-      }
-      
-      const translated = await getFromMemory(cleanWordMatch[0]);
-      
-      if (translated) {
-        // Attempt to preserve capitalization for unknown proper nouns
-        let finalTranslated = translated;
-        if (cleanWordMatch[0][0] === cleanWordMatch[0][0].toUpperCase()) {
-           if (finalTranslated === cleanWord) {
-             finalTranslated = cleanWordMatch[0];
-           }
-        }
-        translatedWords.push(`${prefix}${finalTranslated}${suffix}`);
-      } else {
-        // We treat it as a proper noun if it's capitalized and not the first word.
-        // For other unknown words, we transliterate them to Bengali script as a fallback,
-        // since we can't reliably determine if they are nouns without a full dictionary/POS tagger.
+      const translated = await getFromMemory(cleanWordMatch[0], cachedMemory);
+      if (translated) translatedWords.push(`${prefix}${translated}${suffix}`);
+      else {
         const isCapitalized = cleanWordMatch[0][0] === cleanWordMatch[0][0].toUpperCase();
-        const isFirstWord = i === 0;
-        const isProperNoun = isCapitalized && !isFirstWord;
-
-        if (isProperNoun) {
-            // Keep the English word for proper nouns
-            translatedWords.push(`${prefix}${cleanWordMatch[0]}${suffix}`);
-        } else {
-            // Fallback to transliteration for other unknown words
-            let transliterated = transliterateToBengali(cleanWord);
-            translatedWords.push(`${prefix}${transliterated}${suffix}`);
-        }
+        if (isCapitalized && i > 0) translatedWords.push(`${prefix}${cleanWordMatch[0]}${suffix}`);
+        else translatedWords.push(`${prefix}${transliterateToBengali(cleanWord)}${suffix}`);
       }
     }
-
-    // Re-join words, fixing punctuation spacing
-    let segmentTranslation = translatedWords.join(' ');
-    segmentTranslation = segmentTranslation.replace(/\s+([,;:.!?])/g, '$1');
-    
-    finalTranslatedText += segmentTranslation + ' ';
+    finalTranslatedText += translatedWords.join(' ').replace(/\s+([,;:.!?])/g, '$1') + ' ';
   }
-
   return finalTranslatedText.trim();
 };

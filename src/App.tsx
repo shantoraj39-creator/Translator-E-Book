@@ -10,7 +10,12 @@ import workerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import ReactMarkdown from 'react-markdown';
 import localforage from 'localforage';
 import { jsPDF } from 'jspdf';
-import { Upload, Moon, Sun, BookOpen, ChevronLeft, ChevronRight, Loader2, Library, Trash2, WifiOff, ArrowLeft, Download, Settings, ZoomIn, ZoomOut, Share2, Book, CloudDownload, CheckCircle, Languages, Camera, X, BookText, Search, LogIn, LogOut, User as UserIcon } from 'lucide-react';
+import { 
+  Upload, Moon, Sun, BookOpen, ChevronLeft, ChevronRight, Loader2, Library, 
+  Trash2, WifiOff, ArrowLeft, Download, Settings, ZoomIn, ZoomOut, Share2, 
+  Book, CloudDownload, CheckCircle, Languages, Camera, X, BookText, Search, 
+  LogIn, LogOut, User as UserIcon, Wifi, FileText
+} from 'lucide-react';
 import { auth, db } from './firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -43,6 +48,10 @@ const PdfPage = ({ pdfDoc, pageNum, zoom, onVisible }: { pdfDoc: pdfjsLib.PDFDoc
 
     return () => observer.disconnect();
   }, [pageNum, onVisible]);
+
+  useEffect(() => {
+    setHasRendered(false);
+  }, [zoom, pdfDoc, pageNum]);
 
   useEffect(() => {
     if (!isVisible || !pdfDoc || !canvasRef.current || hasRendered) return;
@@ -90,8 +99,8 @@ const PdfPage = ({ pdfDoc, pageNum, zoom, onVisible }: { pdfDoc: pdfjsLib.PDFDoc
   }, [pdfDoc, pageNum, zoom, isVisible, hasRendered]);
 
   return (
-    <div ref={containerRef} className="w-full flex justify-center mb-8 transition-opacity duration-500" style={{ minHeight: '800px', opacity: isVisible ? 1 : 0.5 }}>
-      <canvas ref={canvasRef} className="max-w-full h-auto shadow-xl bg-white rounded-md" />
+    <div ref={containerRef} className="w-full flex justify-center mb-8 transition-opacity duration-500" style={{ minHeight: isVisible ? 'auto' : '400px', opacity: isVisible ? 1 : 0.5 }}>
+      <canvas ref={canvasRef} className="max-w-full h-auto shadow-2xl bg-white rounded-xl" />
     </div>
   );
 };
@@ -192,12 +201,14 @@ export default function App() {
           const userRef = doc(db, 'users', currentUser.uid);
           const userSnap = await getDoc(userRef);
           if (!userSnap.exists()) {
-            await setDoc(userRef, {
+            const userData: any = {
               uid: currentUser.uid,
-              email: currentUser.email || null,
-              phoneNumber: currentUser.phoneNumber || null,
               createdAt: Date.now()
-            });
+            };
+            if (currentUser.email) userData.email = currentUser.email;
+            if (currentUser.phoneNumber) userData.phoneNumber = currentUser.phoneNumber;
+            
+            await setDoc(userRef, userData);
           }
         } catch (error) {
           console.error("Error creating user profile:", error);
@@ -255,6 +266,8 @@ export default function App() {
     return saved ? parseInt(saved, 10) : 18;
   });
   const [isOffline, setIsOffline] = useState<boolean>(!navigator.onLine);
+  const [forceOffline, setForceOffline] = useState<boolean>(false);
+  const effectiveIsOffline = isOffline || forceOffline;
 
   // Advanced Reader Settings
   const [showSettings, setShowSettings] = useState<boolean>(false);
@@ -299,7 +312,9 @@ export default function App() {
   useEffect(() => {
     const handleOnline = () => {
       setIsOffline(false);
-      showToast("Back online! Processing queued translations...");
+      if (!forceOffline) {
+        showToast("Back online! Processing queued translations...");
+      }
     };
     const handleOffline = () => {
       setIsOffline(true);
@@ -912,8 +927,10 @@ export default function App() {
     
     const doOfflineTranslation = async (textToTranslate: string, isFallback = false) => {
       try {
+        console.log("Starting offline translation for text length:", textToTranslate.length);
         const { translateTextOffline } = await import('./lib/translationMemory');
         const offlineTranslated = await translateTextOffline(textToTranslate);
+        console.log("Offline translation completed. Result length:", offlineTranslated.length);
         const prefix = isFallback ? '*API Quota Exceeded. Using Fast Offline Logic:*\n\n' : '*Offline Translation:*\n\n';
         const finalOfflineText = `${prefix}${offlineTranslated}`;
         
@@ -942,8 +959,9 @@ export default function App() {
       setTranslatedPages(prev => ({ ...prev, [pageNum]: '' }));
     }
 
-    if (isOffline) {
+    if (effectiveIsOffline) {
       try {
+        console.log(`Translating page ${pageNum} offline...`);
         const page = await pdf.getPage(pageNum);
         const textContent = await page.getTextContent();
         let text = '';
@@ -1381,67 +1399,92 @@ export default function App() {
     <div className={`min-h-screen transition-colors duration-300 ${themeStyles[theme]}`} onClick={handleReaderClick}>
       {/* Header */}
       <div className={`transition-all duration-500 overflow-hidden ${view === 'reader' && !showReaderUI ? 'max-h-0 opacity-0' : 'max-h-32 opacity-100'}`}>
-        <header className="p-4 border-b border-opacity-20 border-current flex justify-between items-center sticky top-0 backdrop-blur-sm z-10">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('dashboard')}>
-            <BookOpen className="w-6 h-6" />
-            <h1 className="text-xl font-bold font-serif hidden sm:block">Bangla Reader</h1>
+        <header className="px-4 sm:px-6 py-3 sm:py-4 border-b border-black/10 dark:border-white/10 flex justify-between items-center sticky top-0 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 z-50">
+          <div className="flex items-center gap-2 sm:gap-3 cursor-pointer group" onClick={() => setView('dashboard')}>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
+              <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-xl font-bold font-sans tracking-tight leading-none">Bangla Reader</h1>
+              <p className="text-[8px] sm:text-[10px] uppercase tracking-[0.2em] font-mono opacity-50 mt-1 hidden xs:block">Language Bridge v2.0</p>
+            </div>
           </div>
           
-          <div className="flex items-center gap-4">
-            {isOffline && (
-              <div className="flex items-center gap-1 text-sm text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400 px-3 py-1 rounded-full">
-                <WifiOff className="w-4 h-4" />
-                <span className="hidden sm:inline">Offline Mode</span>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <div className="hidden sm:flex items-center gap-1 mr-2 sm:mr-4 border-r border-black/10 dark:border-white/10 pr-2 sm:pr-4">
+              {isOffline && (
+                <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md border border-amber-200/50 dark:border-amber-800/50">
+                  <WifiOff className="w-3 h-3" />
+                  <span className="hidden xs:inline">Offline</span>
+                </div>
+              )}
+              <div className="flex bg-black/5 dark:bg-white/5 rounded-lg p-1">
+                <button
+                  onClick={() => {
+                    const newVal = !forceOffline;
+                    setForceOffline(newVal);
+                    showToast(newVal ? "Force Offline Mode: ON" : "Force Offline Mode: OFF");
+                  }}
+                  className={`p-1 sm:p-1.5 rounded-md transition-all ${forceOffline ? 'bg-orange-500 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
+                  title={forceOffline ? "Force Offline Mode: ON" : "Force Offline Mode: OFF"}
+                >
+                  {forceOffline ? <WifiOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Wifi className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                </button>
               </div>
-            )}
+            </div>
 
-            {view === 'reader' && (
-              <button onClick={() => setView('dashboard')} className="flex items-center gap-1 px-3 py-1.5 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-                <Library className="w-4 h-4" />
-                <span className="hidden sm:inline">Library</span>
-              </button>
-            )}
+            <nav className="flex items-center gap-0.5 sm:gap-1">
+              {view === 'reader' && (
+                <button onClick={() => setView('dashboard')} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-xs sm:text-sm font-medium">
+                  <Library className="w-4 h-4" />
+                  <span className="hidden lg:inline">Library</span>
+                </button>
+              )}
 
-            {view !== 'wordLibrary' && (
-              <button onClick={() => setView('wordLibrary')} className="flex items-center gap-1 px-3 py-1.5 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+              <button 
+                onClick={() => setView('wordLibrary')} 
+                className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium ${view === 'wordLibrary' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+              >
                 <BookText className="w-4 h-4" />
-                <span className="hidden sm:inline">Word Library</span>
+                <span className="hidden lg:inline">Dictionary</span>
               </button>
-            )}
 
-            {view !== 'translate' && (
-              <button onClick={() => setView('translate')} className="flex items-center gap-1 px-3 py-1.5 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+              <button 
+                onClick={() => setView('translate')} 
+                className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium ${view === 'translate' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+              >
                 <Languages className="w-4 h-4" />
-                <span className="hidden sm:inline">Translate</span>
+                <span className="hidden lg:inline">Translate</span>
               </button>
-            )}
+            </nav>
 
-            <div className="flex bg-black/5 dark:bg-white/10 rounded-full p-1">
-              <button onClick={() => setTheme('light')} className={`p-2 rounded-full ${theme === 'light' ? 'bg-white text-black shadow-sm' : ''}`} title="Light Mode"><Sun className="w-4 h-4" /></button>
-              <button onClick={() => setTheme('dark')} className={`p-2 rounded-full ${theme === 'dark' ? 'bg-gray-800 text-white shadow-sm' : ''}`} title="Dark Mode"><Moon className="w-4 h-4" /></button>
-              <button onClick={() => setTheme('sepia')} className={`p-2 rounded-full ${theme === 'sepia' ? 'bg-[#f4ecd8] text-[#5b4636] shadow-sm' : ''}`} title="Sepia Mode"><BookOpen className="w-4 h-4" /></button>
-              <button onClick={() => setTheme('novel')} className={`p-2 rounded-full ${theme === 'novel' ? 'bg-[#fdf6e3] text-[#4a4a4a] shadow-sm' : ''}`} title="Novel Mode"><Book className="w-4 h-4" /></button>
+            <div className="h-5 sm:h-6 w-px bg-black/10 dark:bg-white/10 mx-1 sm:mx-2" />
+
+            <div className="flex bg-black/5 dark:bg-white/5 rounded-lg p-0.5 sm:p-1">
+              <button onClick={() => setTheme('light')} className={`p-1 sm:p-1.5 rounded-md transition-all ${theme === 'light' ? 'bg-white text-black shadow-sm' : 'text-gray-400'}`} title="Light"><Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
+              <button onClick={() => setTheme('dark')} className={`p-1 sm:p-1.5 rounded-md transition-all ${theme === 'dark' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-400'}`} title="Dark"><Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
+              <button onClick={() => setTheme('sepia')} className={`p-1 sm:p-1.5 rounded-md transition-all ${theme === 'sepia' ? 'bg-[#f4ecd8] text-[#5b4636] shadow-sm' : 'text-gray-400'}`} title="Sepia"><BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
             </div>
 
             {isAuthReady && (
-              <div className="flex items-center ml-2">
+              <div className="flex items-center ml-1 sm:ml-2">
                 {user ? (
                   <button 
                     onClick={() => signOut(auth)} 
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors text-sm font-medium"
+                    className="flex items-center gap-2 p-0.5 sm:p-1 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                     title="Sign Out"
                   >
-                    <UserIcon className="w-4 h-4" />
-                    <span className="hidden sm:inline truncate max-w-[100px]">{user.displayName || user.phoneNumber || user.email || 'User'}</span>
-                    <LogOut className="w-4 h-4 ml-1 opacity-70" />
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-[10px] sm:text-xs">
+                      {user.displayName?.[0] || user.email?.[0] || 'U'}
+                    </div>
                   </button>
                 ) : (
                   <button 
                     onClick={() => setIsAuthModalOpen(true)} 
-                    className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
+                    className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all text-xs sm:text-sm font-semibold shadow-md shadow-blue-500/20"
                   >
-                    <LogIn className="w-4 h-4" />
-                    <span className="hidden sm:inline">Sign In</span>
+                    <LogIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden xs:inline">Sign In</span>
                   </button>
                 )}
               </div>
@@ -1452,90 +1495,138 @@ export default function App() {
 
       <main className={`mx-auto p-4 md:p-8 transition-all duration-500 ${view === 'reader' && !showReaderUI ? 'max-w-7xl' : 'max-w-5xl'}`} onMouseUp={handleMouseUp}>
         {view === 'dashboard' ? (
-          <div className="space-y-10 animate-in fade-in duration-500">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-              <div>
-                <h2 className="text-4xl md:text-5xl font-bold font-serif mb-3 tracking-tight">Your Library</h2>
-                <p className="opacity-70 text-lg max-w-md leading-relaxed">Read and translate English PDFs to Bengali seamlessly.</p>
+          <div className="space-y-8 sm:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 border-b border-black/5 dark:border-white/5 pb-8 sm:pb-12">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] uppercase tracking-[0.2em] font-bold">
+                  <Library className="w-3 h-3" />
+                  Digital Library
+                </div>
+                <h2 className="text-4xl sm:text-5xl md:text-7xl font-bold font-sans tracking-tighter leading-[0.9]">Your <br className="hidden sm:block" /><span className="text-blue-600">Library</span></h2>
+                <p className="opacity-60 text-base sm:text-lg max-w-md leading-relaxed font-medium">
+                  Bridge the gap between English and Bengali. Read, translate, and build your vocabulary seamlessly.
+                </p>
               </div>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
                 <button 
                   onClick={startCamera}
-                  className="flex items-center gap-2 px-5 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full hover:bg-gray-800 dark:hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                  className="flex-1 lg:flex-none group flex items-center gap-3 px-5 sm:px-6 py-3.5 sm:py-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-xl shadow-black/5 border border-black/5 dark:border-white/5"
                 >
-                  <Camera className="w-5 h-5" />
-                  <span className="font-medium">Camera</span>
+                  <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <Camera className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <span className="block font-bold text-sm">Scan Document</span>
+                    <span className="block text-[10px] opacity-50 uppercase tracking-wider">Use Camera</span>
+                  </div>
                 </button>
-                <label className="cursor-pointer flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
-                  <Upload className="w-5 h-5" />
-                  <span className="font-medium">New Book</span>
+                <label className="flex-1 lg:flex-none group cursor-pointer flex items-center gap-3 px-5 sm:px-6 py-3.5 sm:py-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <span className="block font-bold text-sm">Upload PDF</span>
+                    <span className="block text-[10px] text-white/60 uppercase tracking-wider">Add New Book</span>
+                  </div>
                   <input type="file" accept="application/pdf" className="hidden" onChange={handleFileUpload} />
                 </label>
               </div>
             </div>
 
             {library.length === 0 ? (
-              <div className="text-center py-32 border-2 border-dashed border-current border-opacity-10 rounded-3xl bg-black/5 dark:bg-white/5">
-                <Library className="w-20 h-20 mx-auto mb-6 opacity-20" />
-                <p className="text-xl font-medium opacity-70">Your library is empty</p>
-                <p className="text-base opacity-50 mt-2">Upload a PDF or use the camera to start reading.</p>
+              <div className="text-center py-32 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[2rem] bg-black/5 dark:bg-white/5">
+                <div className="w-24 h-24 bg-white dark:bg-gray-800 rounded-3xl shadow-xl mx-auto mb-8 flex items-center justify-center text-blue-600">
+                  <Library className="w-12 h-12 opacity-40" />
+                </div>
+                <p className="text-2xl font-bold tracking-tight">Your library is empty</p>
+                <p className="text-base opacity-50 mt-3 max-w-xs mx-auto">Upload a PDF or use the camera to start your reading journey.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 {library.map(book => (
                   <div 
                     key={book.id} 
                     onClick={() => openBookFromLibrary(book)}
-                    className="group relative p-6 rounded-3xl border border-black/5 dark:border-white/10 hover:border-blue-500/30 hover:shadow-xl transition-all duration-300 cursor-pointer bg-white dark:bg-gray-800/80 backdrop-blur-sm shadow-sm hover:-translate-y-1"
+                    className="group relative flex flex-col h-full rounded-[2rem] border border-black/5 dark:border-white/5 hover:border-blue-500/30 hover:shadow-2xl transition-all duration-500 cursor-pointer bg-white dark:bg-gray-800/80 backdrop-blur-sm shadow-xl shadow-black/5 hover:-translate-y-2 overflow-hidden"
                   >
-                    <button 
-                      onClick={(e) => requestDeleteBook(e, book.id)}
-                      className="absolute top-4 right-4 p-2.5 rounded-full bg-red-500/10 text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-800/20 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mb-5 shadow-inner">
-                      <BookOpen className="w-7 h-7" />
-                    </div>
-                    <h3 className="font-bold text-lg mb-1 line-clamp-2 leading-snug">{book.title}</h3>
-                    <div className="flex justify-between items-center text-sm opacity-60 mt-4">
-                      <span>Page {book.lastReadPage} / {book.totalPages}</span>
-                      <span className="font-medium">{Math.round((book.lastReadPage / book.totalPages) * 100)}%</span>
-                    </div>
-                    <div className="w-full bg-black/10 dark:bg-white/10 h-1.5 rounded-full mt-2 overflow-hidden">
-                      <div 
-                        className="bg-blue-600 h-full rounded-full transition-all duration-500" 
-                        style={{ width: `${Math.max(2, (book.lastReadPage / book.totalPages) * 100)}%` }}
-                      />
+                    <div className="absolute top-4 right-4 z-10">
+                      <button 
+                        onClick={(e) => requestDeleteBook(e, book.id)}
+                        className="p-2.5 rounded-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white shadow-lg"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                     
-                    {/* Offline Download Status */}
-                    <div className="mt-4 flex items-center justify-between border-t border-current border-opacity-10 pt-3">
-                      {downloadingBooks[book.id] ? (
-                        <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 w-full">
-                          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                          <div className="flex-1 bg-blue-100 dark:bg-blue-900/30 h-1.5 rounded-full overflow-hidden">
-                            <div 
-                              className="bg-blue-600 dark:bg-blue-400 h-full rounded-full transition-all duration-300" 
-                              style={{ width: `${(downloadingBooks[book.id].current / downloadingBooks[book.id].total) * 100}%` }}
-                            />
+                    <div className="aspect-[4/3] bg-gradient-to-br from-blue-500/10 to-purple-500/10 flex items-center justify-center relative overflow-hidden">
+                      <div className="absolute inset-0 bg-grid-black/[0.02] dark:bg-grid-white/[0.02]" />
+                      <div className="w-20 h-28 bg-white dark:bg-gray-700 rounded-lg shadow-2xl flex flex-col p-3 transform group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
+                        <div className="w-full h-1 bg-blue-600 rounded-full mb-2" />
+                        <div className="w-2/3 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mb-1" />
+                        <div className="w-full h-1 bg-gray-200 dark:bg-gray-600 rounded-full mb-1" />
+                        <div className="w-full h-1 bg-gray-200 dark:bg-gray-600 rounded-full mb-1" />
+                        <div className="mt-auto flex justify-end">
+                          <BookOpen className="w-4 h-4 text-blue-600 opacity-50" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-8 flex flex-col flex-1">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded">PDF Document</span>
+                      </div>
+                      <h3 className="font-bold text-xl mb-2 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">{book.title}</h3>
+                      
+                      <div className="mt-auto pt-6">
+                        <div className="flex justify-between items-end mb-2">
+                          <div className="text-xs font-medium opacity-50 uppercase tracking-wider">Progress</div>
+                          <div className="text-sm font-bold text-blue-600">{Math.round((book.lastReadPage / book.totalPages) * 100)}%</div>
+                        </div>
+                        <div className="w-full bg-black/5 dark:bg-white/10 h-2 rounded-full overflow-hidden">
+                          <div 
+                            className="bg-blue-600 h-full rounded-full transition-all duration-1000 ease-out" 
+                            style={{ width: `${(book.lastReadPage / book.totalPages) * 100}%` }}
+                          />
+                        </div>
+                        <div className="flex items-center gap-2 mt-4 text-[11px] font-medium opacity-40">
+                          <Library className="w-3 h-3" />
+                          <span>Page {book.lastReadPage} of {book.totalPages}</span>
+                        </div>
+                      </div>
+
+                      {/* Offline Download Status */}
+                      <div className="mt-6 pt-4 border-t border-black/5 dark:border-white/5">
+                        {downloadingBooks[book.id] ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-blue-600">
+                              <div className="flex items-center gap-2">
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                <span>Downloading</span>
+                              </div>
+                              <span>{Math.round((downloadingBooks[book.id].current / downloadingBooks[book.id].total) * 100)}%</span>
+                            </div>
+                            <div className="w-full bg-blue-100 dark:bg-blue-900/30 h-1 rounded-full overflow-hidden">
+                              <div 
+                                className="bg-blue-600 h-full rounded-full transition-all duration-300" 
+                                style={{ width: `${(downloadingBooks[book.id].current / downloadingBooks[book.id].total) * 100}%` }}
+                              />
+                            </div>
                           </div>
-                          <span className="shrink-0">{Math.round((downloadingBooks[book.id].current / downloadingBooks[book.id].total) * 100)}%</span>
-                        </div>
-                      ) : book.downloadedPages === book.totalPages ? (
-                        <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 font-medium">
-                          <CheckCircle className="w-4 h-4" />
-                          <span>Available Offline</span>
-                        </div>
-                      ) : (
-                        <button 
-                          onClick={(e) => downloadBookForOffline(e, book)}
-                          className="flex items-center gap-1.5 text-xs opacity-60 hover:opacity-100 hover:text-blue-600 transition-colors"
-                        >
-                          <CloudDownload className="w-4 h-4" />
-                          <span>Download for Offline</span>
-                        </button>
-                      )}
+                        ) : book.downloadedPages === book.totalPages ? (
+                          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-green-600 dark:text-green-400">
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            <span>Available Offline</span>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={(e) => downloadBookForOffline(e, book)}
+                            className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest opacity-40 hover:opacity-100 hover:text-blue-600 transition-all"
+                          >
+                            <CloudDownload className="w-3.5 h-3.5" />
+                            <span>Download for Offline</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1543,37 +1634,43 @@ export default function App() {
             )}
           </div>
         ) : view === 'wordLibrary' ? (
-          <div className="space-y-10 animate-in fade-in duration-500">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
-              <div>
-                <h2 className="text-4xl md:text-5xl font-bold font-serif mb-3 tracking-tight">Word Library</h2>
-                <p className="opacity-70 text-lg max-w-md leading-relaxed">Words you have translated and saved for learning.</p>
+          <div className="space-y-8 sm:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 border-b border-black/5 dark:border-white/5 pb-8 sm:pb-12">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] uppercase tracking-[0.2em] font-bold">
+                  <BookText className="w-3 h-3" />
+                  Vocabulary Builder
+                </div>
+                <h2 className="text-4xl sm:text-5xl md:text-7xl font-bold font-sans tracking-tighter leading-[0.9]">Word <br className="hidden sm:block" /><span className="text-blue-600">Library</span></h2>
+                <p className="opacity-60 text-base sm:text-lg max-w-md leading-relaxed font-medium">
+                  Master new words. Review and search through your personal collection of translated terms.
+                </p>
               </div>
-              <div className="relative w-full sm:w-72">
-                <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 opacity-50" />
+              <div className="relative w-full lg:w-80 group">
+                <Search className="w-5 h-5 absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
                 <input 
                   type="text" 
-                  placeholder="Search and translate words..." 
+                  placeholder="Search and translate..." 
                   value={wordSearchQuery}
                   onChange={(e) => setWordSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all shadow-sm"
+                  className="w-full pl-14 pr-6 py-3.5 sm:py-4 rounded-2xl bg-white dark:bg-gray-800 border border-black/5 dark:border-white/5 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all shadow-xl shadow-black/5 font-medium text-sm sm:text-base"
                 />
                 
                 {wordSearchQuery.trim() && (isSearchingTranslation || searchTranslation || searchSuggestions.length > 0) && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-10 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2">
+                  <div className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-black/5 dark:border-white/5 z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2">
                     
                     {/* Exact Translation Result */}
                     {(isSearchingTranslation || searchTranslation) && (
-                      <div className="p-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-blue-50/50 dark:bg-blue-900/10">
+                      <div className="p-4 border-b border-black/5 dark:border-white/5 flex justify-between items-center bg-blue-50/30 dark:bg-blue-900/10">
                         {isSearchingTranslation ? (
-                          <div className="flex items-center gap-2 text-sm opacity-70">
+                          <div className="flex items-center gap-3 text-sm font-medium text-blue-600">
                             <Loader2 className="w-4 h-4 animate-spin" /> Translating...
                           </div>
                         ) : searchTranslation ? (
                           <>
-                            <div className="flex-1 truncate pr-2">
-                              <span className="text-xs opacity-70 block">Meaning:</span>
-                              <span className="font-bold text-blue-600 dark:text-blue-400 truncate block">{searchTranslation}</span>
+                            <div className="flex-1 truncate pr-4">
+                              <span className="text-[10px] font-bold uppercase tracking-widest opacity-50 block mb-1">Meaning</span>
+                              <span className="font-bold text-lg text-blue-600 dark:text-blue-400 truncate block">{searchTranslation}</span>
                             </div>
                             {searchTranslation !== "Not found in offline dictionary." && !savedWords[wordSearchQuery.toLowerCase().trim()] && (
                               <button 
@@ -1583,7 +1680,7 @@ export default function App() {
                                     setSavedWords(prev => ({ ...prev, [wordSearchQuery.toLowerCase().trim()]: searchTranslation }));
                                   });
                                 }}
-                                className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/50 transition-colors shrink-0 font-medium"
+                                className="text-xs bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 font-bold"
                               >
                                 Save
                               </button>
@@ -1595,19 +1692,19 @@ export default function App() {
 
                     {/* Suggestions List */}
                     {searchSuggestions.length > 0 && (
-                      <div className="flex flex-col py-1">
-                        <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider opacity-50">Suggestions</div>
+                      <div className="flex flex-col py-2">
+                        <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest opacity-40">Suggestions</div>
                         {searchSuggestions.map((suggestion, idx) => (
                           <button
                             key={idx}
                             onClick={() => setWordSearchQuery(suggestion.english)}
-                            className="flex justify-between items-center px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left"
+                            className="flex justify-between items-center px-4 py-3 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left"
                           >
-                            <div className="flex items-center gap-2">
-                              {suggestion.isCorrection && <span className="text-[10px] bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 px-1.5 py-0.5 rounded">Did you mean?</span>}
-                              <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{suggestion.english}</span>
+                            <div className="flex items-center gap-3">
+                              {suggestion.isCorrection && <span className="text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500 px-2 py-0.5 rounded-full uppercase tracking-tighter">Correction</span>}
+                              <span className="font-bold text-gray-900 dark:text-gray-100">{suggestion.english}</span>
                             </div>
-                            <span className="text-sm text-blue-600 dark:text-blue-400">{suggestion.bengali}</span>
+                            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{suggestion.bengali}</span>
                           </button>
                         ))}
                       </div>
@@ -1618,13 +1715,15 @@ export default function App() {
             </div>
 
             {Object.keys(savedWords).length === 0 ? (
-              <div className="text-center py-32 border-2 border-dashed border-current border-opacity-10 rounded-3xl bg-black/5 dark:bg-white/5">
-                <BookText className="w-20 h-20 mx-auto mb-6 opacity-20" />
-                <p className="text-xl font-medium opacity-70">Your word library is empty</p>
-                <p className="text-base opacity-50 mt-2">Translate short phrases or words while reading to save them here.</p>
+              <div className="text-center py-32 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[2rem] bg-black/5 dark:bg-white/5">
+                <div className="w-24 h-24 bg-white dark:bg-gray-800 rounded-3xl shadow-xl mx-auto mb-8 flex items-center justify-center text-blue-600">
+                  <BookText className="w-12 h-12 opacity-40" />
+                </div>
+                <p className="text-2xl font-bold tracking-tight">Your word library is empty</p>
+                <p className="text-base opacity-50 mt-3 max-w-xs mx-auto">Translate short phrases or words while reading to save them here.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 {Object.entries(savedWords)
                   .filter(([eng, ben]) => 
                     eng.toLowerCase().includes(wordSearchQuery.toLowerCase()) || 
@@ -1632,17 +1731,19 @@ export default function App() {
                   )
                   .sort(([a], [b]) => a.localeCompare(b))
                   .map(([english, bengali]) => (
-                  <div key={english} className="group relative p-5 rounded-2xl border border-black/5 dark:border-white/10 hover:border-blue-500/30 hover:shadow-lg transition-all duration-300 bg-white dark:bg-gray-800/80 backdrop-blur-sm flex flex-col justify-between min-h-[120px] shadow-sm hover:-translate-y-1">
+                  <div key={english} className="group relative p-8 rounded-[2rem] border border-black/5 dark:border-white/5 hover:border-blue-500/30 hover:shadow-2xl transition-all duration-500 bg-white dark:bg-gray-800/80 backdrop-blur-sm flex flex-col justify-between min-h-[160px] shadow-xl shadow-black/5 hover:-translate-y-1">
                     <button 
                       onClick={() => deleteSavedWord(english)}
-                      className="absolute top-3 right-3 p-2 rounded-full bg-red-500/10 text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white"
+                      className="absolute top-4 right-4 p-2.5 rounded-xl bg-red-500/10 text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white shadow-lg"
                       title="Delete word"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                     <div>
-                      <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100 capitalize pr-8 leading-tight">{english}</h3>
-                      <p className="text-blue-600 dark:text-blue-400 font-medium mt-2 text-lg">{bengali}</p>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400 mb-2 opacity-50">Saved Word</div>
+                      <h3 className="font-bold text-2xl text-gray-900 dark:text-gray-100 capitalize pr-8 leading-tight group-hover:text-blue-600 transition-colors">{english}</h3>
+                      <div className="h-px w-8 bg-black/10 dark:bg-white/10 my-4" />
+                      <p className="text-blue-600 dark:text-blue-400 font-bold text-xl">{bengali}</p>
                     </div>
                   </div>
                 ))}
@@ -1650,150 +1751,224 @@ export default function App() {
             )}
           </div>
         ) : view === 'translate' ? (
-          <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl mx-auto">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8">
-              <div>
-                <h2 className="text-4xl md:text-5xl font-bold font-serif mb-3 tracking-tight">Translate</h2>
-                <p className="opacity-70 text-lg max-w-md leading-relaxed">Translate text instantly, online or offline.</p>
+          <div className="space-y-8 sm:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 border-b border-black/5 dark:border-white/5 pb-8 sm:pb-12">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] uppercase tracking-[0.2em] font-bold">
+                  <Languages className="w-3 h-3" />
+                  Instant Translator
+                </div>
+                <h2 className="text-4xl sm:text-5xl md:text-7xl font-bold font-sans tracking-tighter leading-[0.9]">Quick <br className="hidden sm:block" /><span className="text-blue-600">Translate</span></h2>
+                <p className="opacity-60 text-base sm:text-lg max-w-md leading-relaxed font-medium">
+                  Translate any text instantly. Paste your content below and get high-quality Bengali translations.
+                </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              {/* English Input */}
-              <div className="flex flex-col bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
-                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
-                  <span className="font-semibold text-gray-700 dark:text-gray-300">English</span>
-                  {translateInputText && (
-                    <button onClick={() => { setTranslateInputText(''); setTranslateOutputText(''); }} className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">Clear</button>
-                  )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex justify-between items-center px-2">
+                  <label className="text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-50">English Input</label>
+                  <span className="text-[9px] sm:text-[10px] font-mono opacity-40">{translateInputText.length} characters</span>
                 </div>
                 <textarea
                   value={translateInputText}
                   onChange={(e) => setTranslateInputText(e.target.value)}
-                  placeholder="Enter text to translate..."
-                  className="w-full h-64 p-4 bg-transparent resize-none outline-none text-lg"
+                  placeholder="Type or paste English text here..."
+                  className="w-full h-64 sm:h-80 p-6 sm:p-8 rounded-[2rem] bg-white dark:bg-gray-800 border border-black/5 dark:border-white/5 focus:border-blue-500 focus:ring-8 focus:ring-blue-500/5 outline-none transition-all shadow-2xl shadow-black/5 resize-none text-base sm:text-lg leading-relaxed font-medium"
                 />
               </div>
-
-              {/* Bengali Output */}
-              <div className="flex flex-col bg-blue-50/30 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-900/30 shadow-sm overflow-hidden relative">
-                <div className="px-4 py-3 border-b border-blue-100 dark:border-blue-900/30 flex justify-between items-center bg-blue-50/50 dark:bg-blue-900/20">
-                  <span className="font-semibold text-blue-700 dark:text-blue-400">Bengali</span>
+              
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex justify-between items-center px-2">
+                  <label className="text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-50">Bengali Output</label>
                   {translateOutputText && (
                     <button 
                       onClick={() => {
                         navigator.clipboard.writeText(translateOutputText);
                         showToast("Copied to clipboard!");
-                      }} 
-                      className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      }}
+                      className="text-[10px] font-bold uppercase tracking-widest text-blue-600 hover:underline"
                     >
-                      Copy
+                      Copy All
                     </button>
                   )}
                 </div>
-                <div className="w-full h-64 p-4 overflow-y-auto text-lg font-serif">
+                <div className="w-full h-64 sm:h-80 p-6 sm:p-8 rounded-[2rem] bg-blue-50/30 dark:bg-blue-900/10 border border-blue-500/10 overflow-y-auto shadow-inner">
                   {isTranslatingText ? (
-                    <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 opacity-70">
-                      <Loader2 className="w-5 h-5 animate-spin" /> Translating...
+                    <div className="flex flex-col items-center justify-center h-full gap-4 text-blue-600">
+                      <Loader2 className="w-8 h-8 animate-spin" />
+                      <span className="font-bold text-xs sm:text-sm uppercase tracking-widest animate-pulse">Translating...</span>
                     </div>
                   ) : translateOutputText ? (
                     <div className="markdown-body">
                       <ReactMarkdown>{translateOutputText}</ReactMarkdown>
                     </div>
                   ) : (
-                    <span className="opacity-40 italic">Translation will appear here...</span>
+                    <div className="flex flex-col items-center justify-center h-full opacity-20 gap-4">
+                      <Languages className="w-12 h-12" />
+                      <p className="text-sm font-bold uppercase tracking-widest">Translation will appear here</p>
+                    </div>
                   )}
                 </div>
               </div>
             </div>
             
-            <div className="flex justify-end">
+            <div className="flex justify-center pt-4">
               <button
                 onClick={handleTranslateText}
                 disabled={!translateInputText.trim() || isTranslatingText}
-                className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 font-medium text-lg"
+                className="group flex items-center gap-3 px-8 sm:px-12 py-4 sm:py-5 bg-blue-600 text-white rounded-2xl sm:rounded-3xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-2xl shadow-blue-500/30 font-bold text-base sm:text-lg w-full sm:w-auto justify-center"
               >
-                <Languages className="w-5 h-5" />
-                Translate
+                <Languages className="w-5 h-5 sm:w-6 h-6 group-hover:rotate-12 transition-transform" />
+                Translate Now
               </button>
             </div>
           </div>
         ) : (
           <div className="relative animate-in fade-in duration-500">
             {/* Reader Toolbar */}
-            <div className={`reader-toolbar transition-all duration-500 relative z-40 ${!showReaderUI ? 'max-h-0 opacity-0 mb-0 overflow-hidden' : 'max-h-[500px] opacity-100 mb-6 sm:mb-8 overflow-visible'}`}>
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 opacity-100 sm:opacity-80 hover:opacity-100 transition-opacity">
-                <div className="flex items-center justify-between w-full sm:w-auto gap-4">
-                  <button onClick={() => setView('dashboard')} className="flex items-center justify-center w-10 h-10 sm:w-auto sm:h-auto sm:px-4 sm:py-2 gap-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full sm:rounded-xl shrink-0 transition-all font-medium">
-                    <ArrowLeft className="w-5 h-5 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Back to Library</span>
+            <div className={`reader-toolbar transition-all duration-500 fixed bottom-8 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-4xl ${!showReaderUI ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}>
+              <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-2xl border border-black/5 dark:border-white/10 rounded-[2.5rem] p-3 shadow-2xl shadow-black/20 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setView('dashboard')} 
+                    className="flex items-center gap-2 px-4 py-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-2xl transition-all font-bold text-xs group"
+                  >
+                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                    <span className="hidden sm:inline">Library</span>
                   </button>
-                  <span className="font-medium truncate flex-1 sm:hidden text-right text-sm">{currentBook?.title}</span>
+                  <div className="h-8 w-px bg-black/5 dark:bg-white/5 mx-1 hidden sm:block" />
+                  <div className="hidden md:block max-w-[200px]">
+                    <p className="text-[9px] font-bold uppercase tracking-widest opacity-40 leading-none mb-1">Now Reading</p>
+                    <p className="font-bold text-xs truncate">{currentBook?.title}</p>
+                  </div>
                 </div>
-                
-                <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto flex-wrap sm:flex-nowrap pb-2 sm:pb-0 justify-start sm:justify-end">
-                  <span className="font-medium truncate max-w-[200px] sm:max-w-xs hidden sm:block">{currentBook?.title}</span>
-                  <div className="flex items-center gap-1 sm:gap-1 border border-current border-opacity-10 dark:border-opacity-20 bg-white/50 dark:bg-black/20 backdrop-blur-sm rounded-xl p-1.5 shrink-0 shadow-sm">
+
+                <div className="flex items-center gap-1 sm:gap-2">
+                  {/* Appearance Controls */}
+                  <div className="flex items-center bg-black/5 dark:bg-white/5 rounded-2xl p-1">
+                    <button 
+                      onClick={() => setFontSize(f => Math.max(14, f - 2))} 
+                      className="w-10 h-10 flex items-center justify-center hover:bg-white dark:hover:bg-gray-800 rounded-xl transition-all text-xs font-bold"
+                      title="Decrease Font Size"
+                    >
+                      A-
+                    </button>
+                    <div className="w-px h-4 bg-black/10 dark:bg-white/10" />
+                    <button 
+                      onClick={() => setFontSize(f => Math.min(32, f + 2))} 
+                      className="w-10 h-10 flex items-center justify-center hover:bg-white dark:hover:bg-gray-800 rounded-xl transition-all text-sm font-bold"
+                      title="Increase Font Size"
+                    >
+                      A+
+                    </button>
+                  </div>
+
+                  <div className="h-8 w-px bg-black/5 dark:bg-white/5 mx-1" />
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-1">
                     <div className="relative">
-                      <button onClick={() => setShowShareMenu(!showShareMenu)} className={`p-3 sm:p-2 sm:px-3 sm:py-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg flex items-center gap-1 transition-colors ${showShareMenu ? 'bg-black/5 dark:bg-white/10' : ''}`} title="Share">
-                        <Share2 className="w-5 h-5 sm:w-4 sm:h-4" />
+                      <button 
+                        onClick={() => setShowShareMenu(!showShareMenu)} 
+                        className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${showShareMenu ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+                        title="Share"
+                      >
+                        <Share2 className="w-4 h-4" />
                       </button>
                       {showShareMenu && (
-                        <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 shadow-xl rounded-xl p-2 border border-gray-200 dark:border-gray-700 z-50 w-48 text-gray-900 dark:text-gray-100 flex flex-col gap-1">
-                          <button onClick={() => handleShare('page')} className="text-left px-3 py-3 sm:py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors font-medium">
-                            Share Current Page
-                          </button>
-                          <button onClick={() => handleShare('book')} className="text-left px-3 py-3 sm:py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors font-medium">
-                            Share Full Book
-                          </button>
-                        </div>
+                        <>
+                          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 sm:hidden" onClick={() => setShowShareMenu(false)} />
+                          <div className="fixed bottom-24 inset-x-4 sm:absolute sm:bottom-full sm:left-1/2 sm:-translate-x-1/2 sm:mb-4 bg-white dark:bg-gray-800 shadow-2xl rounded-[2rem] p-3 border border-black/5 dark:border-white/5 z-50 sm:w-64 animate-in fade-in slide-in-from-bottom-4">
+                            <div className="flex items-center justify-between p-3 sm:hidden border-b border-black/5 mb-2">
+                              <span className="font-bold text-xs uppercase tracking-widest opacity-40">Share Options</span>
+                              <button onClick={() => setShowShareMenu(false)} className="p-1 hover:bg-black/5 rounded-full"><X className="w-4 h-4" /></button>
+                            </div>
+                            <button onClick={() => handleShare('page')} className="flex items-center gap-3 w-full px-4 py-3.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 rounded-2xl transition-colors font-bold">
+                              <FileText className="w-4 h-4 opacity-50" />
+                              Share Current Page
+                            </button>
+                            <button onClick={() => handleShare('book')} className="flex items-center gap-3 w-full px-4 py-3.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 rounded-2xl transition-colors font-bold">
+                              <Book className="w-4 h-4 opacity-50" />
+                              Share Full Book
+                            </button>
+                          </div>
+                        </>
                       )}
                     </div>
-                    <button onClick={downloadTranslatedBook} className="p-3 sm:p-2 sm:px-3 sm:py-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg flex items-center gap-1 transition-colors" title="Download Translated Book">
-                      <Download className="w-5 h-5 sm:w-4 sm:h-4" />
+
+                    <button 
+                      onClick={downloadTranslatedBook} 
+                      className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all"
+                      title="Download PDF"
+                    >
+                      <Download className="w-4 h-4" />
                     </button>
-                    <div className="w-px h-6 sm:h-4 bg-current opacity-20 mx-1"></div>
-                    <button onClick={() => setFontSize(f => Math.max(14, f - 2))} className="p-3 sm:p-2 sm:px-3 sm:py-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg font-medium transition-colors text-lg sm:text-base">-A</button>
-                    <button onClick={() => setFontSize(f => Math.min(32, f + 2))} className="p-3 sm:p-2 sm:px-3 sm:py-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg font-medium transition-colors text-lg sm:text-base">+A</button>
-                    <div className="w-px h-6 sm:h-4 bg-current opacity-20 mx-1"></div>
+
                     <div className="relative">
-                      <button onClick={() => setShowSettings(!showSettings)} className={`p-3 sm:p-2 sm:px-3 sm:py-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors ${showSettings ? 'bg-black/5 dark:bg-white/10' : ''}`} title="Settings">
-                        <Settings className="w-5 h-5 sm:w-4 sm:h-4" />
+                      <button 
+                        onClick={() => setShowSettings(!showSettings)} 
+                        className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${showSettings ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+                        title="Display Settings"
+                      >
+                        <Settings className="w-4 h-4" />
                       </button>
                       {showSettings && (
-                        <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 shadow-xl rounded-xl p-4 border border-gray-200 dark:border-gray-700 z-50 w-[85vw] max-w-[16rem] sm:w-64 text-gray-900 dark:text-gray-100">
-                          <h3 className="font-bold mb-3 border-b border-gray-200 dark:border-gray-700 pb-2">Reader Settings</h3>
-                          
-                          <div className="mb-4">
-                            <label className="text-xs font-bold uppercase opacity-50 block mb-2">View Mode</label>
-                            <div className="flex bg-gray-100 dark:bg-gray-900 rounded p-1">
-                              <button onClick={() => setViewMode('translation')} className={`flex-1 py-1 text-sm rounded ${viewMode === 'translation' ? 'bg-white dark:bg-gray-700 shadow' : ''}`}>Text</button>
-                              <button onClick={() => setViewMode('pdf')} className={`flex-1 py-1 text-sm rounded ${viewMode === 'pdf' ? 'bg-white dark:bg-gray-700 shadow' : ''}`}>PDF</button>
-                              <button onClick={() => setViewMode('split')} className={`flex-1 py-1 text-sm rounded ${viewMode === 'split' ? 'bg-white dark:bg-gray-700 shadow' : ''}`}>Split</button>
+                        <>
+                          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 sm:hidden" onClick={() => setShowSettings(false)} />
+                          <div className="fixed bottom-24 inset-x-4 sm:absolute sm:bottom-full sm:right-0 sm:mb-4 bg-white dark:bg-gray-800 shadow-2xl rounded-[2.5rem] p-8 border border-black/5 dark:border-white/5 z-50 sm:w-80 animate-in fade-in slide-in-from-bottom-4">
+                            <div className="flex items-center justify-between mb-8 border-b border-black/5 dark:border-white/5 pb-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                                  <Settings className="w-4 h-4" />
+                                </div>
+                                <h3 className="font-bold text-xs uppercase tracking-[0.2em]">Reader Settings</h3>
+                              </div>
+                              <button onClick={() => setShowSettings(false)} className="sm:hidden p-2 hover:bg-black/5 rounded-full"><X className="w-4 h-4" /></button>
                             </div>
-                          </div>
+                            
+                            <div className="space-y-8">
+                              <div>
+                                <label className="text-[10px] font-bold uppercase tracking-widest opacity-40 block mb-4">Reading Theme</label>
+                                <div className="grid grid-cols-4 gap-2 bg-black/5 dark:bg-white/5 rounded-2xl p-1.5">
+                                  <button onClick={() => setTheme('light')} className={`w-full aspect-square rounded-xl border-2 transition-all ${theme === 'light' ? 'border-blue-600 bg-white' : 'border-transparent bg-white opacity-50 hover:opacity-100'}`} title="Light" />
+                                  <button onClick={() => setTheme('dark')} className={`w-full aspect-square rounded-xl border-2 transition-all ${theme === 'dark' ? 'border-blue-600 bg-gray-900' : 'border-transparent bg-gray-900 opacity-50 hover:opacity-100'}`} title="Dark" />
+                                  <button onClick={() => setTheme('sepia')} className={`w-full aspect-square rounded-xl border-2 transition-all ${theme === 'sepia' ? 'border-blue-600 bg-[#F4ECD8]' : 'border-transparent bg-[#F4ECD8] opacity-50 hover:opacity-100'}`} title="Sepia" />
+                                  <button onClick={() => setTheme('novel')} className={`w-full aspect-square rounded-xl border-2 transition-all ${theme === 'novel' ? 'border-blue-600 bg-[#FCF9F2]' : 'border-transparent bg-[#FCF9F2] opacity-50 hover:opacity-100'}`} title="Novel" />
+                                </div>
+                              </div>
 
-                          <div className="mb-4">
-                            <label className="text-xs font-bold uppercase opacity-50 block mb-2">Page Layout</label>
-                            <div className="flex bg-gray-100 dark:bg-gray-900 rounded p-1">
-                              <button onClick={() => { setPageLayout('single'); goToPage(currentPage); }} className={`flex-1 py-1 text-sm rounded ${pageLayout === 'single' ? 'bg-white dark:bg-gray-700 shadow' : ''}`}>Single</button>
-                              <button onClick={() => { setPageLayout('facing'); goToPage(currentPage); }} className={`flex-1 py-1 text-sm rounded ${pageLayout === 'facing' ? 'bg-white dark:bg-gray-700 shadow' : ''}`}>Facing</button>
-                            </div>
-                          </div>
+                              <div>
+                                <label className="text-[10px] font-bold uppercase tracking-widest opacity-40 block mb-4">View Mode</label>
+                                <div className="grid grid-cols-3 gap-2 bg-black/5 dark:bg-white/5 rounded-2xl p-1.5">
+                                  <button onClick={() => setViewMode('translation')} className={`py-2.5 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${viewMode === 'translation' ? 'bg-white dark:bg-gray-700 shadow-lg text-blue-600' : 'opacity-50 hover:opacity-100'}`}>Text</button>
+                                  <button onClick={() => setViewMode('pdf')} className={`py-2.5 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${viewMode === 'pdf' ? 'bg-white dark:bg-gray-700 shadow-lg text-blue-600' : 'opacity-50 hover:opacity-100'}`}>PDF</button>
+                                  <button onClick={() => setViewMode('split')} className={`py-2.5 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${viewMode === 'split' ? 'bg-white dark:bg-gray-700 shadow-lg text-blue-600' : 'opacity-50 hover:opacity-100'}`}>Split</button>
+                                </div>
+                              </div>
 
-                          <div>
-                            <label className="text-xs font-bold uppercase opacity-50 block mb-2">PDF Zoom</label>
-                            <div className="flex items-center justify-between bg-gray-100 dark:bg-gray-900 rounded p-1">
-                              <button onClick={() => setPdfZoom(z => Math.max(0.5, z - 0.25))} className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded"><ZoomOut className="w-4 h-4"/></button>
-                              <span className="text-sm font-mono">{Math.round(pdfZoom * 100)}%</span>
-                              <button onClick={() => setPdfZoom(z => Math.min(3.0, z + 0.25))} className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded"><ZoomIn className="w-4 h-4"/></button>
+                              <div>
+                                <label className="text-[10px] font-bold uppercase tracking-widest opacity-40 block mb-4">Page Layout</label>
+                                <div className="grid grid-cols-2 gap-2 bg-black/5 dark:bg-white/5 rounded-2xl p-1.5">
+                                  <button onClick={() => { setPageLayout('single'); goToPage(currentPage); }} className={`py-2.5 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${pageLayout === 'single' ? 'bg-white dark:bg-gray-700 shadow-lg text-blue-600' : 'opacity-50 hover:opacity-100'}`}>Single</button>
+                                  <button onClick={() => { setPageLayout('facing'); goToPage(currentPage); }} className={`py-2.5 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${pageLayout === 'facing' ? 'bg-white dark:bg-gray-700 shadow-lg text-blue-600' : 'opacity-50 hover:opacity-100'}`}>Facing</button>
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="text-[10px] font-bold uppercase tracking-widest opacity-40 block mb-4">PDF Zoom</label>
+                                <div className="flex items-center justify-between bg-black/5 dark:bg-white/5 rounded-2xl p-1.5">
+                                  <button onClick={() => setPdfZoom(z => Math.max(0.5, z - 0.25))} className="w-10 h-10 flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 rounded-xl transition-all"><ZoomOut className="w-4 h-4"/></button>
+                                  <span className="text-xs font-bold font-mono">{Math.round(pdfZoom * 100)}%</span>
+                                  <button onClick={() => setPdfZoom(z => Math.min(3.0, z + 0.25))} className="w-10 h-10 flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 rounded-xl transition-all"><ZoomIn className="w-4 h-4"/></button>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        </>
                       )}
                     </div>
-                    <button onClick={(e) => currentBook && requestDeleteBook(e, currentBook.id)} className="p-2 hover:bg-red-500/10 text-red-500 rounded transition-colors" title="Delete Book">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
                   </div>
                 </div>
               </div>
@@ -1830,14 +2005,14 @@ export default function App() {
                   {/* Translation View */}
                   {(viewMode === 'translation' || viewMode === 'split') && (
                     <div 
-                      className={`flex-1 prose prose-lg max-w-none font-serif leading-relaxed ${viewMode === 'split' ? 'lg:max-w-[50%]' : ''}`}
+                      className={`flex-1 max-w-none font-serif leading-relaxed ${viewMode === 'split' ? 'lg:max-w-[50%]' : ''}`}
                       style={{ fontSize: `${fontSize}px` }}
                     >
-                      <div className={`p-6 sm:p-10 md:p-16 rounded-2xl shadow-xl border transition-colors duration-300 h-full ${
-                        theme === 'dark' ? 'bg-gray-800 border-gray-700 text-gray-200 shadow-black/20' :
-                        theme === 'sepia' ? 'bg-[#F4ECD8] border-[#E2D2B4] text-[#5C4B37] shadow-[#5C4B37]/5' :
-                        theme === 'novel' ? 'bg-[#FFFFFF] border-gray-100 text-[#333333] shadow-gray-200/50' :
-                        'bg-white border-gray-100 text-gray-800 shadow-gray-200/50'
+                      <div className={`p-8 sm:p-12 md:p-20 rounded-[2rem] shadow-2xl border transition-all duration-500 h-full ${
+                        theme === 'dark' ? 'bg-gray-800 border-white/5 text-gray-200 shadow-black/40' :
+                        theme === 'sepia' ? 'bg-[#F4ECD8] border-[#E2D2B4] text-[#5C4B37] shadow-[#5C4B37]/10' :
+                        theme === 'novel' ? 'bg-[#FCF9F2] border-[#E8E4D8] text-[#2C2C2C] shadow-[#E8E4D8]/50' :
+                        'bg-white border-black/5 text-gray-800 shadow-black/5'
                       }`}>
                         {group.map((pageNum, i) => pageNum && (
                           <React.Fragment key={`trans-${pageNum}`}>
