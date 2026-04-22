@@ -1,0 +1,19 @@
+{
+  "table": "টেবিল", "chair": "চেয়ার", "bed": "বিছানা", "desk": "ডেস্ক", "cabinet": "ক্যাবিনেট",
+  "shelf": "তাক", "drawer": "ড্রয়ার", "sofa": "সোফা", "couch": "সোফা", "lamp": "বাতি",
+  "window": "জানালা", "door": "দরজা", "wall": "দেওয়াল", "floor": "মেঝে", "ceiling": "ছাদ",
+  "roof": "ছাদ", "stairs": "সিঁড়ি", "elevator": "লিফট", "kitchen": "রান্নাঘর", "bathroom": "গোসলখানা",
+  "bedroom": "শোয়ার ঘর", "balcony": "বারান্দা", "garden": "বাগান", "garage": "গ্যারেজ", "gate": "গেট",
+  "clock": "ঘড়ি", "watch": "ঘড়ি", "mirror": "আয়না", "comb": "চিরুনি", "towel": "তোয়ালে",
+  "soap": "সাবান", "shampoo": "শ্যাম্পু", "toothbrush": "টুথব্রাশ", "toothpaste": "টুথপেস্ট", "razor": "খুর",
+  "cup": "কাপ", "plate": "থালা", "spoon": "চামচ", "fork": "কাঁটাচামচ", "knife": "ছুরি",
+  "bowl": "বাটি", "glass": "গ্লাস", "bottle": "বোতল", "pot": "পাত্র", "pan": "কড়াই",
+  "refrigerator": "ফ্রিজ", "microwave": "মাইক্রোওয়েভ", "oven": "চুলা", "toaster": "টোস্টার", "kettle": "কেটলি",
+  "television": "টেলিভিশন", "radio": "রেডিও", "phone": "ফোন", "pen": "কলম", "pencil": "পেন্সিল",
+  "paper": "কাগজ", "notebook": "নোটবুক", "envelope": "খাম", "stamp": "ডাকটিকিট", "glue": "আঠা",
+  "scissors": "কাঁচি", "bag": "ব্যাগ", "wallet": "মানিব্যাগ", "purse": "পার্স", "umbrella": "ছাতা",
+  "key": "চাবি", "lock": "তালা", "hammer": "হাতুড়ি", "screwdriver": "স্ক্রু ড্রাইভার", "wrench": "রেঞ্চ",
+  "pliers": "প্লায়ার্স", "nail": "পেরেক", "screw": "স্ক্রু", "saw": "করাত", "drill": "ড্রিল",
+  "car": "গাড়ি", "bicycle": "সাইকেল", "motorcycle": "মোটরসাইকেল", "bus": "বাস", "train": "ট্রেন",
+  "airplane": "উড়োজাহাজ", "boat": "নৌকা", "ship": "জাহাজ", "truck": "ট্রাক", "taxi": "ট্যাক্সি"
+}

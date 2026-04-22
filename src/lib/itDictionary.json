@@ -1,0 +1,20 @@
+{
+  "computer": "কম্পিউটার", "software": "সফটওয়্যার", "hardware": "হার্ডওয়্যার", "network": "নেটওয়ার্ক", "internet": "ইন্টারনেট",
+  "website": "ওয়েবসাইট", "database": "ডেটাবেস", "server": "সার্ভার", "client": "ক্লায়েন্ট", "browser": "ব্রাউজার",
+  "programming": "প্রোগ্রামিং", "coding": "কোডিং", "algorithm": "অ্যালগরিদম", "application": "অ্যাপ্লিকেশন", "interface": "ইন্টারফেস",
+  "protocol": "প্রটোকল", "security": "নিরাপত্তা", "firewall": "ফায়ারওয়াল", "encryption": "এনক্রিপশন", "decryption": "ডিক্রিপশন",
+  "cloud": "ক্লাউড", "storage": "স্টোরেজ", "backup": "ব্যাকআপ", "recovery": "পুনরুদ্ধার", "update": "হালনাগাদ",
+  "upgrade": "আপগ্রেড", "install": "ইনস্টল", "uninstall": "আনইনস্টল", "download": "ডাউনলোড", "upload": "আপলোড",
+  "search": "অনুসন্ধান", "query": "কোয়েরি", "filter": "ফিল্টার", "sort": "সর্ট", "merge": "মার্জ",
+  "branch": "ব্রাঞ্চ", "commit": "কমিট", "repository": "রিপোজিটরি", "version": "সংস্করণ", "debug": "ডিবাগ",
+  "error": "ত্রুটি", "warning": "সতর্কবার্তা", "exception": "ব্যতিক্রম", "log": "লগ", "cache": "ক্যাশ",
+  "authentication": "প্রমাণীকরণ", "authorization": "অনুমোদন", "session": "সেশন", "cookie": "কুকি", "token": "টোকেন",
+  "api": "এপিআই", "framework": "ফ্রেমওয়ার্ক", "library": "লাইব্রেরি", "module": "মডিউল", "package": "প্যাকেজ",
+  "user": "ব্যবহারকারী", "admin": "অ্যাডমিন", "password": "পাসওয়ার্ড", "username": "ব্যবহারকারীর নাম", "email": "ইমেল",
+  "mobile": "মোবাইল", "tablet": "ট্যাবলেট", "laptop": "ল্যাপটপ", "desktop": "ডেস্কটপ", "monitor": "মনিটর",
+  "keyboard": "কীবোর্ড", "mouse": "মাউস", "printer": "প্রিন্টার", "scanner": "স্ক্যানার", "router": "রাউটার",
+  "modem": "মডেম", "wi-fi": "ওয়াই-ফাই", "bluetooth": "ব্লুটুথ", "battery": "ব্যাটারি", "charger": "চার্জার",
+  "camera": "ক্যামেরা", "video": "ভিডিও", "audio": "অডিও", "image": "ছবি", "screen": "স্ক্রিন",
+  "resolution": "রেজোলিউশন", "pixel": "পিক্সেল", "buffer": "বাফার", "stream": "স্ট্রিম", "render": "রেন্ডার",
+  "animation": "অ্যানিমেশন", "graphics": "গ্রাফিক্স", "icon": "আইকন", "font": "ফন্ট", "layout": "লেআউট"
+}

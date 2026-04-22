@@ -1,0 +1,14 @@
+{
+  "mountain": "পাহাড়", "river": "নদী", "forest": "বন", "ocean": "সমুদ্র", "lake": "হ্রদ",
+  "valley": "উপত্যকা", "island": "দ্বীপ", "desert": "মরুভূমি", "beach": "সৈকত", "waterfall": "জলপ্রপাত",
+  "volcano": "আগ্নেয়গিরি", "canyon": "গিরিখাত", "cave": "গুহা", "glacier": "হিমবাহ", "swamp": "জলাভূমি",
+  "prairie": "তৃণভূমি", "savanna": "সাভানা", "tundra": "তুন্দ্রা", "reef": "প্রবালপ্রাচীর", "delta": "বদ্বীপ",
+  "sky": "আকাশ", "cloud": "মেঘ", "sun": "সূর্য", "moon": "চাঁদ", "star": "তারা",
+  "rain": "বৃষ্টি", "snow": "তুষার", "storm": "ঝড়", "thunder": "বজ্রধ্বনি", "lightning": "বিদ্যুৎ",
+  "wind": "বাতাস", "fog": "কুয়াশা", "mist": "কুয়াশা", "dew": "শিশির", "frost": "তুষারপাত",
+  "heat": "তাপ", "cold": "ঠান্ডা", "climate": "জলবায়ু", "weather": "আবহাওয়া", "season": "ঋতু",
+  "tree": "গাছ", "flower": "ফুল", "grass": "ঘাস", "leaf": "পাতা", "root": "মূল",
+  "branch": "শাখা", "seed": "বীজ", "fruit": "ফল", "vegetable": "সবজি", "plant": "উদ্ভিদ",
+  "animal": "প্রাণী", "bird": "পাখি", "fish": "মাছ", "insect": "পতঙ্গ", "mammal": "স্তন্যপায়ী",
+  "reptile": "সরীসৃপ", "amphibian": "উভচর", "dinosaur": "ডাইনোসর", "extinct": "বিলুপ্ত", "endangered": "বিপন্ন"
+}

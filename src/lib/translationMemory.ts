@@ -1,6 +1,15 @@
 import localforage from 'localforage';
 import largeDictionary from './largeDictionary.json';
 import rareDictionary from './rareDictionary.json';
+import academicDictionary from './academicDictionary.json';
+import scienceDictionary from './scienceDictionary.json';
+import medicalDictionary from './medicalDictionary.json';
+import legalDictionary from './legalDictionary.json';
+import natureDictionary from './natureDictionary.json';
+import itDictionary from './itDictionary.json';
+import commonObjects from './commonObjects.json';
+import commonWordsExtended from './commonWordsExtended.json';
+import commonPhrasesData from './commonPhrases.json';
 
 // A small basic dictionary for common words to fallback on
 export const basicDictionary: Record<string, string> = {
@@ -125,7 +134,33 @@ export const basicDictionary: Record<string, string> = {
   "phenomenon": "ঘটনা", "criterion": "মানদণ্ড", "mechanism": "কৌশল", "component": "উপাদান", "variable": "পরিবর্তনশীল"
 };
 
-const extendedDictionary = { ...(largeDictionary as Record<string, string>), ...(rareDictionary as Record<string, string>) };
+const extendedDictionary: Record<string, string> = {
+  ...(largeDictionary as Record<string, string>),
+  ...(rareDictionary as Record<string, string>),
+  ...(academicDictionary as Record<string, string>),
+  ...(scienceDictionary as Record<string, string>),
+  ...(medicalDictionary as Record<string, string>),
+  ...(legalDictionary as Record<string, string>),
+  ...(natureDictionary as Record<string, string>),
+  ...(itDictionary as Record<string, string>),
+  ...(commonObjects as Record<string, string>),
+  ...(commonWordsExtended as Record<string, string>),
+};
+
+const commonPhrases: Record<string, string> = {
+  ...(commonPhrasesData as Record<string, string>),
+  "no problem": "কোনো সমস্যা নেই",
+  "take care": "নিজের যত্ন নিন",
+  "see you later": "পরে দেখা হবে",
+  "nice to meet you": "আপনার সাথে দেখা করে ভালো লাগলো",
+  "how much": "কত?",
+  "where is": "কোথায়",
+  "i don't know": "আমি জানি না",
+  "i dont know": "আমি জানি না",
+  "help me": "আমাকে সাহায্য করুন",
+  "what happened": "কি হয়েছে?",
+  "wait a minute": "এক মিনিট অপেক্ষা করুন"
+};
 
 export const saveToMemory = async (english: string, bengali: string) => {
   try {
@@ -163,6 +198,8 @@ export const getFromMemory = async (english: string, cachedMemory?: Record<strin
     
     if (memory[word]) return memory[word];
     if (basicDictionary[word]) return basicDictionary[word];
+    // Check common phrases for single-word idiomatic matches
+    if (commonPhrases[word]) return commonPhrases[word];
     if (extendedDictionary[word]) return extendedDictionary[word];
 
     // Morphological Fallbacks
@@ -336,28 +373,6 @@ const placeWords = new Set([
 const humanNouns = new Set([
   "man", "woman", "boy", "girl", "child", "person", "student", "teacher", "doctor", "engineer", "worker", "friend", "brother", "sister", "father", "mother", "king", "queen", "leader", "people", "human", "someone", "anyone", "nobody"
 ]);
-
-const commonPhrases: Record<string, string> = {
-  "how are you": "আপনি কেমন আছেন?",
-  "what is your name": "আপনার নাম কি?",
-  "i love you": "আমি তোমাকে ভালোবাসি",
-  "thank you": "ধন্যবাদ",
-  "good morning": "শুভ সকাল",
-  "good night": "শুভ রাত্রি",
-  "excuse me": "মাফ করবেন",
-  "i am sorry": "আমি দুঃখিত",
-  "no problem": "কোনো সমস্যা নেই",
-  "take care": "নিজের যত্ন নিন",
-  "see you later": "পরে দেখা হবে",
-  "nice to meet you": "আপনার সাথে দেখা করে ভালো লাগলো",
-  "how much": "কত?",
-  "where is": "কোথায়",
-  "i don't know": "আমি জানি না",
-  "i dont know": "আমি জানি না",
-  "help me": "আমাকে সাহায্য করুন",
-  "what happened": "কি হয়েছে?",
-  "wait a minute": "এক মিনিট অপেক্ষা করুন"
-};
 
 const reorderSentence = (sentence: string): string[] => {
   const clauses = sentence.split(/([,;:\.\!\?]+)/);

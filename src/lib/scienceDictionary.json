@@ -1,0 +1,22 @@
+{
+  "atom": "পরমাণু", "molecule": "অণু", "electron": "ইলেকট্রন", "proton": "প্রোটন", "neutron": "নিউট্রন",
+  "cell": "কোষ", "nucleus": "নিউক্লিয়াস", "plasma": "প্লাজমা", "enzyme": "এনজাইম", "hormone": "হরমোন",
+  "gravity": "মহাকর্ষ", "force": "বল", "mass": "ভর", "velocity": "বেগ", "acceleration": "ত্বরণ",
+  "friction": "ঘর্ষণ", "energy": "শক্তি", "power": "ক্ষমতা", "work": "কাজ", "pressure": "চাপ",
+  "acid": "অম্ল", "base": "ক্ষার", "element": "মৌল", "compound": "যৌগ", "mixture": "মিশ্রণ",
+  "solid": "কঠিন", "liquid": "তরল", "gas": "গ্যাস", "vapor": "বাষ্প", "condensation": "ঘনীভবন",
+  "evaporation": "বাষ্পীভবন", "radiation": "বিকিরণ", "conduction": "পরিবহন", "convection": "পরিচলন", "osmosis": "অভিস্রবণ",
+  "chromatography": "ক্রোমাটোগ্রাফি", "distillation": "পাতন", "filtration": "ছাঁকন", "spectrum": "বর্ণালি", "frequency": "কম্পঙ্ক",
+  "wavelength": "তরঙ্গদৈর্ঘ্য", "amplitude": "বিস্তার", "reflection": "প্রতিফলন", "refraction": "প্রতিসরণ", "diffraction": "অপবর্তন",
+  "interference": "ব্যতিচার", "polarization": "সমবর্তন", "magnetism": "চৌম্বকত্ব", "electricity": "বিদ্যুৎ", "voltage": "বিভব",
+  "current": "তড়িৎপ্রবাহ", "resistance": "রোধ", "capacitance": "ধারকত্ব", "inductance": "আবেশ", "circuit": "বর্তন",
+  "semiconductor": "অর্ধপরিবাহী", "superconductor": "অতিপরিবাহী", "galaxy": "ছায়াপথ", "nebula": "নীহারিকা", "black hole": "কৃষ্ণগহ্বর",
+  "supernova": "সুপারনোভা", "comet": "ধূমকেতু", "asteroid": "গ্রহাণু", "planet": "গ্রহ", "satellite": "উপগ্রহ",
+  "orbit": "কক্ষপথ", "eclipse": "গ্রহণ", "tide": "জোয়ার", "earthquake": "ভূমিকম্প", "volcano": "আগ্নেয়গিরি",
+  "tectonics": "টেকটোনিক্স", "erosion": "ক্ষয়", "glacier": "হিমবাহ", "atmosphere": "বায়ুমণ্ডল", "stratosphere": "স্ট্র্যাটোস্ফিয়ার",
+  "ionosphere": "আয়নোস্ফিয়ার", "ecosystem": "বাস্তুসংস্থান", "biosphere": "জীবমণ্ডল", "photosynthesis": "সালোকসংশ্লেষণ", "respiration": "শ্বসন",
+  "metabolism": "বিপাক", "mutation": "মিউটেশন", "evolution": "বিবর্তন", "genetics": "বংশগতি", "chromosome": "ক্রোমোজোম",
+  "dna": "ডিএনএ", "rna": "আরএনএ", "protein": "প্রোটিন", "carbohydrate": "কার্বোহাইড্রেট", "lipid": "লিপিড",
+  "vitamin": "ভিটামিন", "mineral": "খনিজ", "antibody": "অ্যান্টিবডি", "antigen": "অ্যান্টিজেন", "pathogen": "রোগজীবাণু",
+  "vaccine": "টিকা", "antibiotic": "অ্যান্টিবায়োটিক", "immunity": "রোগ প্রতিরোধ ক্ষমতা", "digestion": "পরিপাক", "circulation": "রক্তসঞ্চালন"
+}

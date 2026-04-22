@@ -1,0 +1,12 @@
+{
+  "contract": "চুক্তি", "legal": "আইনি", "court": "আদালত", "lawyer": "আইনজীবী", "judge": "বিচারক",
+  "witness": "সাক্ষী", "evidence": "প্রমাণ", "verdict": "রায়", "appeal": "আপিল", "complaint": "অভিযোগ",
+  "defendant": "বিবাদী", "plaintiff": "বাদী", "attorney": "অ্যাটর্নি", "jury": "জুরি", "testimony": "সাক্ষ্য",
+  "affidavit": "হলফনামা", "summons": "সমন", "warrant": "ওয়ারেন্ট", "custody": "হেফাজত", "bail": "জামিন",
+  "prison": "কারাগার", "crime": "অপরাধ", "felony": "গুরুতর অপরাধ", "misdemeanor": "সামান্য অপরাধ", "fraud": "জালিয়াতি",
+  "theft": "চুরি", "assault": "আক্রমণ", "murder": "হত্যা", "negligence": "অবহেলা", "damages": "ক্ষতিপূরণ",
+  "divorce": "বিবাহবিচ্ছেদ", "marriage": "বিবাহ", "property": "সম্পত্তি", "estate": "সম্পত্তি", "will": "উইল",
+  "heir": "উত্তরাধিকারী", "guardian": "অভিভাবক", "intellectual property": "মেধাসম্পদ", "copyright": "কপিরাইট", "patent": "পেটেন্ট",
+  "trademark": "ট্রেডমার্ক", "litigation": "মামলা", "arbitration": "সালিশ", "mediation": "মধ্যস্থতা", "clause": "ধারা",
+  "agreement": "চুক্তিপত্র", "breach": "লঙ্ঘন", "liability": "দায়", "statute": "সংবিধি", "regulation": "প্রবিধান"
+}

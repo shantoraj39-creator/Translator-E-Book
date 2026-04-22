@@ -1704,7 +1704,7 @@ export default function App() {
                               {suggestion.isCorrection && <span className="text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500 px-2 py-0.5 rounded-full uppercase tracking-tighter">Correction</span>}
                               <span className="font-bold text-gray-900 dark:text-gray-100">{suggestion.english}</span>
                             </div>
-                            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{suggestion.bengali}</span>
+                            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{suggestion.bengali}</span>
                           </button>
                         ))}
                       </div>
@@ -2105,7 +2105,7 @@ export default function App() {
                   <Languages className="w-3 h-3" />
                   <span className="text-[10px] font-bold uppercase tracking-wider">AI Translation</span>
                 </div>
-                <p className="text-gray-900 dark:text-gray-100">{selectionTranslation}</p>
+                <p className="text-blue-600 dark:text-blue-400 font-bold text-base">{selectionTranslation}</p>
               </div>
             )}
           </div>

@@ -1,0 +1,20 @@
+{
+  "anatomy": "শারীরস্থান", "physiology": "শারীরবৃত্ত", "pathology": "রোগতত্ত্ব", "pharmacology": "ভেষজতত্ত্ব", "cardiology": "হৃদরোগবিদ্যা",
+  "dermatology": "চর্মরোগবিদ্যা", "neurology": "স্নায়ুবিদ্যা", "oncology": "কর্কটরোগবিদ্যা", "pediatrics": "শিশুচিকিৎসা", "psychiatry": "মনোরোগবিদ্যা",
+  "surgery": "অস্ত্রোপচার", "diagnosis": "রোগ নির্ণয়", "prognosis": "পূর্বাভাস", "treatment": "চিকিৎসা", "therapy": "থেরাপি",
+  "symptom": "উপসর্গ", "syndrome": "সিন্ড্রোম", "infection": "সংক্রমণ", "inflammation": "প্রদাহ", "allergy": "অ্যালার্জি",
+  "asthma": "হাঁপানি", "diabetes": "বহুমূত্র", "hypertension": "উচ্চ রক্তচাপ", "anemia": "রক্তাল্পতা", "stroke": "পক্ষাঘাত",
+  "cancer": "ক্যান্সার", "tumor": "টিউমার", "biopsy": "বায়োপসি", "autopsy": "ময়নাতদন্ত", "hemorrhage": "রক্তক্ষরণ",
+  "fracture": "অস্থিভঙ্গ", "dislocation": "স্থানচ্যুতি", "sprain": "মচকানো", "bruise": "কালশিটে", "wound": "ক্ষত",
+  "artery": "ধমনী", "vein": "শিরা", "capillary": "কৈশিক নালী", "heart": "হৃদয়", "lung": "ফুসফুস",
+  "liver": "যকৃৎ", "kidney": "বৃক্ক", "stomach": "পাকস্থলী", "intestine": "অন্ত্র", "brain": "মস্তিষ্ক",
+  "nerve": "স্নায়ু", "muscle": "পেশী", "bone": "হাড়", "joint": "সন্ধি", "ligament": "লিগামেন্ট",
+  "tendon": "টেন্ডন", "skin": "চামড়া", "blood": "রক্ত", "lymph": "লসিকা", "hormone": "হরমোন",
+  "enzyme": "এনজাইম", "antibody": "অ্যান্টিবডি", "antigen": "অ্যান্টিজেন", "bacteria": "ব্যাকটেরিয়া", "virus": "ভাইরাস",
+  "fungus": "ছত্রাক", "parasite": "পরজীবী", "fever": "জ্বর", "cough": "কাশি", "nausea": "বমি ভাব",
+  "vomiting": "বমি", "diarrhea": "ডায়রিয়া", "constipation": "কোষ্ঠকাঠিন্য", "insomnia": "অনিদ্রা", "fatigue": "ক্লান্তি",
+  "dizziness": "মাথা ঘোরা", "headache": "মাথাব্যথা", "chest pain": "বুকে ব্যথা", "abdomen": "তলপেট", "pelvis": "শ্রোণী",
+  "ultrasound": "আল্ট্রাসাউন্ড", "x-ray": "এক্স-রে", "mri": "এমআরআই", "ct scan": "সিটি স্ক্যান", "endoscopy": "এন্ডোস্কোপি",
+  "anesthesia": "অ্যানেস্থেশিয়া", "vaccination": "টিকাদান", "transfusion": "রক্ত সঞ্চালন", "transplant": "প্রতিস্থাপন", "dialysis": "ডায়ালাইসিস",
+  "intensive care": "নিবিড় পরিচর্যা", "emergency": "জরুরি অবস্থা", "prescription": "প্রেসক্রিপশন", "medication": "ওষুধ", "dosage": "মাত্রা"
+}
